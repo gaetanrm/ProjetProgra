@@ -84,12 +84,22 @@ void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le t
 	//on verra apres pas important pour le moment
 }
 
-void recepReq(struct sites *k){ //Comportement d'un site lors de la réception d'une requête venant du site k
-
+void recepReq(sites *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
+	if ((*receveur).Pere == NULL){
+		if ((*receveur).est_demandeur == 1){
+			(*receveur).Next = (*envoyeur).name;
+		}else{
+			(*receveur).jeton_present = 0;
+			envoyerToken(&envoyeur);
+		}
+	}else{
+		envoyerDemande(&envoyeur);
+	}
+	(*receveur).Pere = (*envoyeur).name;
 }
 
-void recepToken(int jeton_present){ //Comportement lors de la réception du token par un site l'ayant demandé
-
+void recepToken(sites* k){ //Comportement lors de la réception du token par un site l'ayant demandé
+	(*k).jeton_present = 1;
 }
 
 int main(int argc, char *argv[]){

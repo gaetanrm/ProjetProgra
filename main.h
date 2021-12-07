@@ -17,9 +17,9 @@ void finSC(sites* k); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepReq(sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepReq(sites *envoyeur, sites *receveur);//Comportement d'un site lors de la réception d'une requête venant du site k
 
-void recepToken(int jeton_present);//Comportement lors de la réception du token par un site l'ayant demandé
+void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
 /*
 Structure de donnée choisi :
