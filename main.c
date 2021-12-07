@@ -5,11 +5,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "main.h"
 
 
-void envoyerDemande(int pere, int *demande){
+void envoyerDemande(int pere, int *est_demandeur){ //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
-	*demande = 1;
+	*est_demandeur = 1;
 
 	if (pere == NULL){
 		//appeler une méthode pour rentrer en SC
@@ -41,7 +42,7 @@ void envoyerDemande(int pere, int *demande){
 		long int message;
 		unsigned int nbTotalOctetsEnvoyes = 0;
 		unsigned int nbAppelSend = 0;
-		int snd = sendto(ds, &message, sizeof(message), 0, (struct sockaddr*)&ad, lgA);
+		int snd = sendto(ds, &message, sizeof(message), 0, (struct sockaddr*)&adresse, sizeof(adresse)); //verif les deux derniers arguments car pas sur
 		/* Traiter TOUTES les valeurs de retour (voir le cours ou la documentation). */
 		if (snd <= 0) {
 			perror("Client:pb d'envoi : ");
@@ -53,6 +54,31 @@ void envoyerDemande(int pere, int *demande){
 	}
 }
 
+struct sites init(){ //Initialisation de tous les sites au démarrage de l'algo
+	struct sites moiMeme;
+	moiMeme.Next = NULL;
+	moiMeme.Pere = 1;
+	moiMeme.est_demandeur = 0;
+	moiMeme.estEn_SC = 0;
+	moiMeme.jeton_present = 0;
+
+}
+
+void finSC(){ //Sorti de la SC
+
+}
+
+void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le token
+
+}
+
+void recepReq(struct sites *k){ //Comportement d'un site lors de la réception d'une requête venant du site k
+
+}
+
+void recepToken(int jeton_present){ //Comportement lors de la réception du token par un site l'ayant demandé
+
+}
 
 int main(int argc, char *argv[]){
 
