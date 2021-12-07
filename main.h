@@ -1,22 +1,25 @@
 #include <stdio.h>
 
+typedef struct sites sites;
 struct sites {
-	char* name;
-	int Next, Pere;
-	int jeton_present, est_demandeur, estEn_SC;
+	int name; //nom du site
+	int Next, Pere; //Site suivant dans la liste d'attente et site père du site
+	int jeton_present, est_demandeur, estEn_SC; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
-struct sites init();//Initialisation de tous les sites au démarrage de l'algo
+sites init();//Initialisation de tous les sites au démarrage de l'algo
 
-void finSC(); //Sorti de la SC
+int envoyerDemande(sites *k); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+
+int envoyerToken(sites *k); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+
+void finSC(sites* k); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepReq(struct sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepReq(sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
 
 void recepToken(int jeton_present);//Comportement lors de la réception du token par un site l'ayant demandé
-
-void envoyerDemande(int pere, int *est_demandeur); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
 /*
 Structure de donnée choisi :
@@ -27,3 +30,5 @@ Structure de donnée choisi :
 	Des envois de message via le réseau et les sockets pour les requêtes de demande de permission
 	Des envois de message pour transmettre le jeton  
 */
+
+// !!!!!!!!!!! Faut changer Next et Pere car des int ne marchent pas, il nous faut des structs avec IP + port !!!!!!!!!!!!

@@ -8,11 +8,24 @@
 #include "main.h"
 
 
-void envoyerDemande(int pere, int *est_demandeur){ //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+sites init(){ //Initialisation de tous les sites au démarrage de l'algo
+	//Chacun doit envoyer son num aux autres pour savoir qui est le 1, donc qui sera la racine au départ de l'algo même si il n'a pas fait de demande.
+	//C'est juste pour que l'algo puisse fonctionner ensuite car il a besoin d'une racine pour cela
+	sites moiMeme;
+	moiMeme.Next = NULL; //Faut changer Next et Pere car des int ne marchent pas, il nous faut des structs avzec IP + port
+	moiMeme.Pere = 1;
+	moiMeme.est_demandeur = 0;
+	moiMeme.estEn_SC = 0;
+	moiMeme.jeton_present = 0;
+	return moiMeme;
 
-	*est_demandeur = 1;
+}
 
-	if (pere == NULL){
+int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+
+	(*k).est_demandeur = 1;
+
+	if ((*k).Pere == NULL){
 		//appeler une méthode pour rentrer en SC
 	}else{
 		/* Créer une socket */
@@ -27,7 +40,7 @@ void envoyerDemande(int pere, int *est_demandeur){ //Envoie d'une requête de pe
 		struct sockaddr_in adresse;
 		adresse.sin_family=AF_INET;
 		adresse.sin_addr.s_addr = INADDR_ANY;
-		adresse.sin_port = htons(pere);
+		adresse.sin_port = htons((*k).Pere);
 
 		if(bind(ds, (struct sockaddr *)&adresse, sizeof(adresse)) < 0){
 			perror("Serveur : problème au bind");
@@ -50,26 +63,25 @@ void envoyerDemande(int pere, int *est_demandeur){ //Envoie d'une requête de pe
 			exit(1); //je choisis de quitter le pgm, la suite depend de 
 			// la reussite de l'envoir de la demande de connexion
 		}
-		pere = NULL;
+		(*k).Pere = NULL;
 	}
 }
 
-struct sites init(){ //Initialisation de tous les sites au démarrage de l'algo
-	struct sites moiMeme;
-	moiMeme.Next = NULL;
-	moiMeme.Pere = 1;
-	moiMeme.est_demandeur = 0;
-	moiMeme.estEn_SC = 0;
-	moiMeme.jeton_present = 0;
-
+int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+	//Gérer socket et envoi avec valeur de retour
 }
 
-void finSC(){ //Sorti de la SC
-
+void finSC(sites* k){ //Sorti de la SC
+	(*k).est_demandeur = 0;
+	if ((*k).Next != NULL){
+		envoyerToken(&k);
+		(*k).jeton_present = 0;
+		(*k).Next = NULL;
+	}
 }
 
 void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le token
-
+	//on verra apres pas important pour le moment
 }
 
 void recepReq(struct sites *k){ //Comportement d'un site lors de la réception d'une requête venant du site k
