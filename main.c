@@ -8,14 +8,17 @@
 #include "main.h"
 
 
-sites init(){ //Initialisation de tous les sites au démarrage de l'algo
+sites init(int port){ //Initialisation de tous les sites au démarrage de l'algo
 	//Chacun doit envoyer son num aux autres pour savoir qui est le 1, donc qui sera la racine au départ de l'algo même si il n'a pas fait de demande.
 	//C'est juste pour que l'algo puisse fonctionner ensuite car il a besoin d'une racine pour cela
 	sites moiMeme;
+	char* ipPere = "127.0.1.1";
+	moiMeme.IP = inet_ntoa(**connaitreIP());
+	moiMeme.port = htons((short) port);
 	moiMeme.Next.IP = NULL;
 	moiMeme.Next.port = NULL;
-	moiMeme.Pere.IP = 1; //Faut changer j'ai mis 1 mais c'est pas une IP mdr
-	moiMeme.Pere.port = 1; //pareil pour le port 
+	moiMeme.Pere.IP = ipPere; //Valeur aléatoire, faudra s'en occuper plus tard
+	moiMeme.Pere.port = htons((short) 8888); //Idem
 	moiMeme.est_demandeur = 0;
 	moiMeme.estEn_SC = 0;
 	moiMeme.jeton_present = 0;
@@ -108,9 +111,26 @@ void recepToken(sites* k){ //Comportement lors de la réception du token par un 
 	(*k).jeton_present = 1;
 }
 
+in_addr** connaitreIP() {
+	char s[256];
+	struct hostent *host;
+	struct in_addr **adr;
+	if (!gethostname(s, 256))
+		if ((host = gethostbyname(s)) != NULL) {
+			adr = (struct in_addr **)host->h_addr_list;
+    		return adr;
+		}
+}
+
 int main(int argc, char *argv[]){
 
+	in_addr** IP = connaitreIP();
+	printf(inet_ntoa(**IP)); 	//pour afficher l'adresse IP de l'host
+	sites test = init(8080);
+	printf("\nIP : %s Port : %d IP du père : %s Port du père : %d IP du Next : %s Port du Next : %d \n", test.IP, test.port, test.Pere.IP, test.Pere.port, test.Next.IP, test.Next.port);
 
+	
+	/*
 	// je passe en paramètre un numero de port pour la socket du serveur
   
   	if (argc<2){
@@ -118,7 +138,7 @@ int main(int argc, char *argv[]){
     	exit(1);
   	}
 
-  	/* Créer une socket */
+  	// Créer une socket 
  
   	int ds = socket(PF_INET, SOCK_DGRAM, 0);
   	if(ds == -1){
@@ -140,5 +160,5 @@ int main(int argc, char *argv[]){
   	}
 
   	printf("Serveur: nommage : ok\n");
-
+	  */
 }

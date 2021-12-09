@@ -2,19 +2,21 @@
 
 typedef struct sites sites;
 typedef struct parent parent;
+typedef struct in_addr in_addr;
 
+struct parent{
+	char* IP;
+	int port;
+};
 struct sites {
-	int name; //nom du site
-	parent Next, Pere; //Site suivant dans la liste d'attente et site père du site
+	char* IP;
+	int port;
+	parent Next;
+	parent Pere; //Site suivant dans la liste d'attente et site père du site
 	int jeton_present, est_demandeur, estEn_SC; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
-struct parent{
-	int IP;
-	int port;
-};
-
-sites init();//Initialisation de tous les sites au démarrage de l'algo
+sites init(int port);//Initialisation de tous les sites au démarrage de l'algo
 
 int envoyerDemande(sites *k); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
@@ -28,6 +30,8 @@ void recepReq(parent *envoyeur, sites *receveur);//Comportement d'un site lors d
 
 void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
+in_addr** connaitreIP();
+
 /*
 Structure de donnée choisi :
 	Une liste pour la liste d'attente
@@ -37,5 +41,3 @@ Structure de donnée choisi :
 	Des envois de message via le réseau et les sockets pour les requêtes de demande de permission
 	Des envois de message pour transmettre le jeton  
 */
-
-// !!!!!!!!!!! Faut changer Next et Pere car des int ne marchent pas, il nous faut des structs avec IP + port !!!!!!!!!!!!
