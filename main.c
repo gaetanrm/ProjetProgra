@@ -74,41 +74,116 @@ int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer 
 }
 
 int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
-	//Gérer socket et envoi avec valeur de retour
+    //Gérer socket et envoi avec valeur de retour
+    
+    /*Création de la socket d'envoi*/
+    int dET = socket(PF_INET, SOCK_DGRAM, 0);
+    if(dET == -1){
+        perror("problème création socket de envoyerToken");
+        exit(1);
+    }
+
+    printf("Processus %d : creation de la socket de envoyerToken: ok\n",i);
+    
+    /* Nommage de la socket du destinataire (le next)*/
+    
+    struct sockaddr_in addr_Next;
+    addr_Serv.sin_family=AF_INET;
+    inet_pton(AF_INET, k.Next.IP, &(addr_Serv.sin_Next));
+    addr_Serv.sin_port = htons((short) atoi(k.Next.port));
+    socklen_t lgA = sizeof(struct sockaddr_in);
+    
+    printf("Processus %d : J'envoi le jeton\n", i);
+    
+    char message[100];
+    sprintf(message, "Je suis le jeton");
+    
+    int snd = sendto(dET, &message, sizeof(message), 0, (struct sockaddr*)&addr_Next, lgA);
+    
+    if (snd <= 0) {
+        perror("pb d'envoi du jeton");
+        close(dET); //je libère ressources avant de terminer
+        exit(1); //je choisis de quitter le pgm, la suite depend de
+        // la reussite de l'envoir de la demande de connexion
+    }
+    
+    printf("Processus %d : Jeton envoyé \n", i);
+    
+    close(dET);
 }
 
 void finSC(sites* k){ //Sorti de la SC
-	(*k).est_demandeur = 0;
-	if ((*k).Next.IP != NULL){
-		envoyerToken(&k);
-		(*k).jeton_present = 0;
-		(*k).Next.IP = NULL;
-		(*k).Next.port = NULL;
-	}
+    (*k).est_demandeur = 0;
+    if ((*k).Next.IP != NULL){
+        envoyerToken(&k);
+        (*k).jeton_present = 0;
+        (*k).Next.IP = NULL;
+        (*k).Next.port = NULL;
+    }
 }
 
 void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le token
-	//on verra apres pas important pour le moment
+    //on verra apres pas important pour le moment
 }
 
 void recepReq(parent *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
-	if ((*receveur).Pere.IP == NULL){
-		if ((*receveur).est_demandeur == 1){
-			(*receveur).Next.IP = (*envoyeur).IP;
-			(*receveur).Next.port = (*envoyeur).port;
-		}else{
-			(*receveur).jeton_present = 0;
-			envoyerToken(&envoyeur);
-		}
-	}else{
-		envoyerDemande(&envoyeur);
-	}
-	(*receveur).Pere.IP = (*envoyeur).IP;
-	(*receveur).Pere.port = (*envoyeur).port;
+    if ((*receveur).Pere.IP == NULL){
+        if ((*receveur).est_demandeur == 1){
+            (*receveur).Next.IP = (*envoyeur).IP;
+            (*receveur).Next.port = (*envoyeur).port;
+        }else{
+            (*receveur).jeton_present = 0;
+            envoyerToken(&envoyeur);
+        }
+    }else{
+        envoyerDemande(&envoyeur);
+    }
+    (*receveur).Pere.IP = (*envoyeur).IP;
+    (*receveur).Pere.port = (*envoyeur).port;
 }
 
-void recepToken(sites* k){ //Comportement lors de la réception du token par un site l'ayant demandé
-	(*k).jeton_present = 1;
+//Fonction qu'on va appeler dans le thread qui sera en attente
+void recepToken(){ //Comportement lors de la réception du token par un site l'ayant demandé
+                            //Créer une socket qui recevra le jeton
+    
+    /*Création de la socket de reception*/
+    int dRT = socket(PF_INET, SOCK_DGRAM, 0);
+    if(dRT == -1){
+        perror("problème création socket de recepToken");
+        exit(1);
+    }
+
+    printf("Processus %d : creation de la socket de recepToken: ok\n",i);
+    
+    /* Nommage de la socket du processus qui envoi le jeton*/
+    struct sockaddr_in addrExp;
+    socklen_t lgAddrExp = sizeof(struct sockaddr_in);
+    
+    //espace memoire pour recevoir le message
+    char msgRecu[100];
+    
+    printf("Processus %d: j'attends de recevoir un message du serveur \n", i);
+    int rcv = recvfrom(dRT, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
+      
+    if(rcv < 0){
+        perror("Problème au niveau du recvfrom de recepTocken");
+        close(dRT);
+        exit(1);
+    }
+
+    if(msgRecu == "Je suis le jeton"){
+        printf("Processus %d : Jeton reçu", i) //i???
+        //(*k).jeton_present = 1;
+    } else{
+        printf("Erreur à la réception du jeton");
+        close(dRT);
+        exit(1);
+    }
+    
+
+    
+    
+    close(dET);
 }
 
 in_addr** connaitreIP() {
