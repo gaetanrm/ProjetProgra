@@ -1,10 +1,17 @@
 #include <stdio.h>
 
 typedef struct sites sites;
+typedef struct parent parent;
+
 struct sites {
 	int name; //nom du site
-	int Next, Pere; //Site suivant dans la liste d'attente et site père du site
+	parent Next, Pere; //Site suivant dans la liste d'attente et site père du site
 	int jeton_present, est_demandeur, estEn_SC; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
+};
+
+struct parent{
+	int IP;
+	int port;
 };
 
 sites init();//Initialisation de tous les sites au démarrage de l'algo

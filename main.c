@@ -12,8 +12,10 @@ sites init(){ //Initialisation de tous les sites au démarrage de l'algo
 	//Chacun doit envoyer son num aux autres pour savoir qui est le 1, donc qui sera la racine au départ de l'algo même si il n'a pas fait de demande.
 	//C'est juste pour que l'algo puisse fonctionner ensuite car il a besoin d'une racine pour cela
 	sites moiMeme;
-	moiMeme.Next = NULL; //Faut changer Next et Pere car des int ne marchent pas, il nous faut des structs avzec IP + port
-	moiMeme.Pere = 1;
+	moiMeme.Next.IP = NULL;
+	moiMeme.Next.port = NULL;
+	moiMeme.Pere.IP = 1; //Faut changer j'ai mis 1 mais c'est pas une IP mdr
+	moiMeme.Pere.port = 1; //pareil pour le port 
 	moiMeme.est_demandeur = 0;
 	moiMeme.estEn_SC = 0;
 	moiMeme.jeton_present = 0;
@@ -25,7 +27,7 @@ int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer 
 
 	(*k).est_demandeur = 1;
 
-	if ((*k).Pere == NULL){
+	if ((*k).Pere.IP == NULL){
 		//appeler une méthode pour rentrer en SC
 	}else{
 		/* Créer une socket */
@@ -40,7 +42,7 @@ int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer 
 		struct sockaddr_in adresse;
 		adresse.sin_family=AF_INET;
 		adresse.sin_addr.s_addr = INADDR_ANY;
-		adresse.sin_port = htons((*k).Pere);
+		adresse.sin_port = htons((*k).Pere.port);
 
 		if(bind(ds, (struct sockaddr *)&adresse, sizeof(adresse)) < 0){
 			perror("Serveur : problème au bind");
@@ -63,7 +65,8 @@ int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer 
 			exit(1); //je choisis de quitter le pgm, la suite depend de 
 			// la reussite de l'envoir de la demande de connexion
 		}
-		(*k).Pere = NULL;
+		(*k).Pere.IP = NULL;
+		(*k).Pere.port = NULL;
 	}
 }
 
@@ -73,10 +76,11 @@ int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce 
 
 void finSC(sites* k){ //Sorti de la SC
 	(*k).est_demandeur = 0;
-	if ((*k).Next != NULL){
+	if ((*k).Next.IP != NULL){
 		envoyerToken(&k);
 		(*k).jeton_present = 0;
-		(*k).Next = NULL;
+		(*k).Next.IP = NULL;
+		(*k).Next.port = NULL;
 	}
 }
 
@@ -84,10 +88,11 @@ void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le t
 	//on verra apres pas important pour le moment
 }
 
-void recepReq(sites *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
-	if ((*receveur).Pere == NULL){
+void recepReq(parent *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
+	if ((*receveur).Pere.IP == NULL){
 		if ((*receveur).est_demandeur == 1){
-			(*receveur).Next = (*envoyeur).name;
+			(*receveur).Next.IP = (*envoyeur).IP;
+			(*receveur).Next.port = (*envoyeur).port;
 		}else{
 			(*receveur).jeton_present = 0;
 			envoyerToken(&envoyeur);
@@ -95,7 +100,8 @@ void recepReq(sites *envoyeur, sites *receveur){ //Comportement d'un site lors d
 	}else{
 		envoyerDemande(&envoyeur);
 	}
-	(*receveur).Pere = (*envoyeur).name;
+	(*receveur).Pere.IP = (*envoyeur).IP;
+	(*receveur).Pere.port = (*envoyeur).port;
 }
 
 void recepToken(sites* k){ //Comportement lors de la réception du token par un site l'ayant demandé
