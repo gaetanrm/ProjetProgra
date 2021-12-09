@@ -17,11 +17,17 @@ sites init(int port){ //Initialisation de tous les sites au démarrage de l'algo
 	moiMeme.port = htons((short) port);
 	moiMeme.Next.IP = NULL;
 	moiMeme.Next.port = NULL;
-	moiMeme.Pere.IP = ipPere; //Valeur aléatoire, faudra s'en occuper plus tard
-	moiMeme.Pere.port = htons((short) 8888); //Idem
+	if (moiMeme.IP == ipPere) {
+		moiMeme.Pere.IP = NULL;
+		moiMeme.Pere.port = NULL;
+		moiMeme.jeton_present = 1;
+	} else {
+		moiMeme.Pere.IP = ipPere; //Valeur aléatoire, faudra s'en occuper plus tard
+		moiMeme.Pere.port = htons((short) 8888); //Idem
+		moiMeme.jeton_present = 0;
+	}
 	moiMeme.est_demandeur = 0;
 	moiMeme.estEn_SC = 0;
-	moiMeme.jeton_present = 0;
 	return moiMeme;
 
 }
