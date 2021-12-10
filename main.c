@@ -132,7 +132,7 @@ void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le t
     //on verra apres pas important pour le moment
 }
 
-void recepReq(parent *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
+void recepDemande(parent *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
     if ((*receveur).Pere.IP == NULL){
         if ((*receveur).est_demandeur == 1){
             (*receveur).Next.IP = (*envoyeur).IP;
@@ -149,17 +149,17 @@ void recepReq(parent *envoyeur, sites *receveur){ //Comportement d'un site lors 
 }
 
 //Fonction qu'on va appeler dans le thread qui sera en attente
-void recepToken(sites *k){ //Comportement lors de la réception du token par un site l'ayant demandé
+void reception(sites *k){ //Comportement lors de la réception du token par un site l'ayant demandé
                             //Créer une socket qui recevra le jeton
     
     /*Création de la socket de reception*/
     int dRT = socket(PF_INET, SOCK_DGRAM, 0);
     if(dRT == -1){
-        perror("problème création socket de recepToken");
+        perror("problème création socket de reception");
         exit(1);
     }
 
-    printf("Processus %d : creation de la socket de recepToken: ok\n", (*k).IP);
+    printf("Processus %d : creation de la socket de reception: ok\n", (*k).IP);
     
     /* Nommage de la socket du processus qui envoi le jeton*/
     struct sockaddr_in addrExp;
@@ -172,21 +172,31 @@ void recepToken(sites *k){ //Comportement lors de la réception du token par un 
     int rcv = recvfrom(dRT, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
       
     if(rcv < 0){
-        perror("Problème au niveau du recvfrom de recepTocken");
+        perror("Problème au niveau du recvfrom de reception");
         close(dRT);
         exit(1);
     }
 
     if(msgRecu == "Je suis le jeton"){
-        printf("Processus %d : Jeton reçu", (*k).IP); //i???
-        //(*k).jeton_present = 1;
-    } else{
-        printf("Erreur à la réception du jeton");
+        printf("Processus %d : Jeton reçu", (*k).IP);
+		(*k).jeton_present = 1;
+    }else if(msgRecu == "Je suis une demande") {
+		printf("Processus %d : Demande reçue", (*k).IP);
+		parent demandeur;
+		demandeur.IP = addrExp.sin_addr.s_addr;
+		demandeur.port = addrExp.sin_port;
+		recepDemande(&demandeur, &k);
+	}else{
+        printf("Erreur à la réception");
         close(dRT);
         exit(1);
     }
     close(dRT);
 }
+
+/*void recepTocken(sites *k){
+	(*k).jeton_present = 1;
+}*/
 
 in_addr** connaitreIP() {
 	char s[256];

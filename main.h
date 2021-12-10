@@ -26,9 +26,11 @@ void finSC(sites* k); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepReq(parent *envoyeur, sites *receveur);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepDemande(parent *envoyeur, sites *receveur);//Comportement d'un site lors de la réception d'une requête venant du site k
 
-void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
+void reception(sites *k); //Réception d'un message et choix entre token et demande
+
+//void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
 in_addr** connaitreIP();
 
