@@ -16,10 +16,10 @@ sites init(int port){ //Initialisation de tous les sites au démarrage de l'algo
 	moiMeme.IP = inet_ntoa(**connaitreIP());
 	moiMeme.port = htons((short) port);
 	moiMeme.Next.IP = NULL;
-	moiMeme.Next.port = NULL;
+	moiMeme.Next.port = 0;
 	if (moiMeme.IP == ipPere) {
 		moiMeme.Pere.IP = NULL;
-		moiMeme.Pere.port = NULL;
+		moiMeme.Pere.port = 0;
 		moiMeme.jeton_present = 1;
 	} else {
 		moiMeme.Pere.IP = ipPere; //Valeur aléatoire, faudra s'en occuper plus tard
@@ -32,30 +32,36 @@ sites init(int port){ //Initialisation de tous les sites au démarrage de l'algo
 
 }
 
-int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
-
+int envoyerDemande(sites* k){ 	//Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+								//resultat: 1 si il est la racine, 0 si il a envoyé la demande à qq d'autre
 	(*k).est_demandeur = 1;
 
 	if ((*k).Pere.IP == NULL){
-		//appeler une méthode pour rentrer en SC
-	}else{
-		/* Créer une socket */
-		int ds = socket(PF_INET, SOCK_DGRAM, 0);
-		if(ds == -1){
-			perror("Serveur : problème création socket");
+		//FAUX (*k).estEn_SC = 1;
+		return 1;
+	} else { //Envoie la demande à son père
+		/* Créer la socket */
+		int dED = socket(PF_INET, SOCK_DGRAM, 0);
+
+		if(dED == -1){
+			perror("problème création socket de envoyerDemande");
 			exit(1);
 		}
 
-		printf("Serveur: creation de la socket : ok\n");
+		printf("Processus %s: creation de la socket : ok\n", (*k).IP);
 
-		struct sockaddr_in adresse;
-		adresse.sin_family=AF_INET;
-		adresse.sin_addr.s_addr = INADDR_ANY;
-		adresse.sin_port = htons((*k).Pere.port);
+		/* Nommage de la socket du destinataire (le pere)*/
+    
+    	struct sockaddr_in addr_Pere;
+    	addr_Pere.sin_family=AF_INET;
+    	inet_pton(AF_INET, (*k).Pere.IP, &(addr_Pere.sin_addr));
+    	addr_Pere.sin_port = htons((short)(*k).Pere.port);
+    	socklen_t lgA = sizeof(struct sockaddr_in);
 
-		if(bind(ds, (struct sockaddr *)&adresse, sizeof(adresse)) < 0){
+
+		if(bind(dED, (struct sockaddr *)&addr_Pere, sizeof(addr_Pere)) < 0){
 			perror("Serveur : problème au bind");
-			close(ds);
+			close(dED);
 			exit(1);
 		}
 
@@ -63,23 +69,26 @@ int envoyerDemande(sites* k){ //Envoie d'une requête de permission pour passer 
 
 		/*Envoie de la demande au père */
 
-		long int message;
-		unsigned int nbTotalOctetsEnvoyes = 0;
-		unsigned int nbAppelSend = 0;
-		int snd = sendto(ds, &message, sizeof(message), 0, (struct sockaddr*)&adresse, sizeof(adresse)); //verif les deux derniers arguments car pas sur
+		char message[100];
+		sprintf(message, "Je suis le jeton");
+
+		
+		int snd = sendto(dED, &message, sizeof(message), 0, (struct sockaddr*)&addr_Pere, sizeof(addr_Pere)); //verif les deux derniers arguments car pas sur
 		/* Traiter TOUTES les valeurs de retour (voir le cours ou la documentation). */
 		if (snd <= 0) {
 			perror("Client:pb d'envoi : ");
-			close(ds); //je libère ressources avant de terminer
+			close(dED); //je libère ressources avant de terminer
 			exit(1); //je choisis de quitter le pgm, la suite depend de 
 			// la reussite de l'envoir de la demande de connexion
 		}
+
 		(*k).Pere.IP = NULL;
-		(*k).Pere.port = NULL;
+		(*k).Pere.port = 0;
+		return 0;
 	}
 }
 
-int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
     //Gérer socket et envoi avec valeur de retour
     
     /*Création de la socket d'envoi*/
@@ -95,8 +104,8 @@ int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce 
     
     struct sockaddr_in addr_Next;
     addr_Next.sin_family=AF_INET;
-    inet_pton(AF_INET, &(*k).Next.IP, &(addr_Next.sin_addr));
-    addr_Next.sin_port = htons((short) atoi((*k).Next.port));
+    inet_pton(AF_INET, (*k).Next.IP, &(addr_Next.sin_addr));
+    addr_Next.sin_port = htons((short)(*k).Next.port);
     socklen_t lgA = sizeof(struct sockaddr_in);
     
     printf("Processus %s : J'envoi le jeton\n", (*k).IP);
@@ -121,10 +130,10 @@ int envoyerToken(sites *k){ //Envoie du token au Next une fois que j'ai fini ce 
 void finSC(sites* k){ //Sorti de la SC
     (*k).est_demandeur = 0;
     if ((*k).Next.IP != NULL){
-        envoyerToken(&k);
+        envoyerToken(k);
         (*k).jeton_present = 0;
         (*k).Next.IP = NULL;
-        (*k).Next.port = NULL;
+        (*k).Next.port = 0;
     }
 }
 
@@ -132,20 +141,20 @@ void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le t
     //on verra apres pas important pour le moment
 }
 
-void recepDemande(parent *envoyeur, sites *receveur){ //Comportement d'un site lors de la réception d'une requête venant du site k
-    if ((*receveur).Pere.IP == NULL){
-        if ((*receveur).est_demandeur == 1){
-            (*receveur).Next.IP = (*envoyeur).IP;
-            (*receveur).Next.port = (*envoyeur).port;
+void recepReq(parent *demandeur, sites *k){ //Comportement d'un site lors de la réception d'une requête venant du site k
+    if ((*k).Pere.IP == NULL){
+        if ((*k).est_demandeur == 1){
+            (*k).Next.IP = (*demandeur).IP;
+            (*k).Next.port = (*demandeur).port;
         }else{
-            (*receveur).jeton_present = 0;
-            envoyerToken(&envoyeur);
+            (*k).jeton_present = 0;
+            envoyerToken(demandeur);
         }
     }else{
-        envoyerDemande(&envoyeur);
+        envoyerDemande(demandeur);
     }
-    (*receveur).Pere.IP = (*envoyeur).IP;
-    (*receveur).Pere.port = (*envoyeur).port;
+    (*k).Pere.IP = (*demandeur).IP;
+    (*k).Pere.port = (*demandeur).port;
 }
 
 //Fonction qu'on va appeler dans le thread qui sera en attente
@@ -168,7 +177,7 @@ void reception(sites *k){ //Comportement lors de la réception du token par un s
     //espace memoire pour recevoir le message
     char msgRecu[100];
     
-    printf("Processus %d: j'attends de recevoir un message du serveur \n", (*k).IP);
+    printf("Processus %s: j'attends de recevoir un message du serveur \n", (*k).IP);
     int rcv = recvfrom(dRT, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
       
     if(rcv < 0){
@@ -202,11 +211,13 @@ in_addr** connaitreIP() {
 	char s[256];
 	struct hostent *host;
 	struct in_addr **adr;
-	if (!gethostname(s, 256))
+	if (!gethostname(s, 256)){
 		if ((host = gethostbyname(s)) != NULL) {
 			adr = (struct in_addr **)host->h_addr_list;
     		return adr;
 		}
+	}
+	return NULL;
 }
 
 int main(int argc, char *argv[]){
