@@ -20,7 +20,7 @@ sites init(int port);//Initialisation de tous les sites au démarrage de l'algo
 
 int envoyerDemande(sites *k); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
-int envoyerToken(sites *k); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(sites *k); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
 
 void finSC(sites* k); //Sorti de la SC
 
