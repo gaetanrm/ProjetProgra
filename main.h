@@ -1,18 +1,13 @@
 #include <stdio.h>
 
 typedef struct sites sites;
-typedef struct parent parent;
+typedef struct sockaddr_in sockaddr_in;
 typedef struct in_addr in_addr;
 
-struct parent{
-	char* IP;
-	int port;
-};
 struct sites {
-	char* IP;
-	int port;
-	parent Next;
-	parent Pere; //Site suivant dans la liste d'attente et site père du site
+	sockaddr_in addr;
+	sockaddr_in Next;
+	sockaddr_in Pere; //Site suivant dans la liste d'attente et site père du site
 	int jeton_present, est_demandeur, estEn_SC; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
@@ -26,7 +21,7 @@ void finSC(sites* k); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepDemande(parent *envoyeur, sites *receveur);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepDemande(sockaddr_in *demandeur, sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
 
 void reception(sites *k); //Réception d'un message et choix entre token et demande
 
