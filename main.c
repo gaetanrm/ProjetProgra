@@ -151,26 +151,17 @@ void recepDemande(sites *demandeur, sites *k, int socket){ //Comportement d'un s
 }
 
 //Fonction qu'on va appeler dans le thread qui sera en attente
-void reception(sites *demandeur, sites *k, int socket){ //Comportement lors de la réception du token par un site l'ayant demandé
+void * reception(void * params){ //Comportement lors de la réception du token par un site l'ayant demandé
                             //Créer une socket qui recevra le jeton
-    
-    /*Création de la socket de reception*/
-   /*int dRT = socket(PF_INET, SOCK_DGRAM, 0);
-    if(dRT == -1){
-        perror("problème création socket de reception");
-        exit(1);
-    }
+    struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
 
-    printf("Processus %d : creation de la socket de reception: ok\n", (*k).addr.sin_addr.s_addr);*/
-    
-    /* Nommage de la socket du processus qui envoi le jeton*/
     struct sockaddr_in addrExp;
     socklen_t lgAddrExp = sizeof(struct sockaddr_in);
     
     //espace memoire pour recevoir le message
     char msgRecu[100];
     
-    printf("Processus %u: j'attends de recevoir un message du serveur \n", (*k).addr.sin_addr.s_addr);
+    printf("Processus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
     long int rcv = recvfrom(socket, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
       
     if(rcv < 0){
@@ -180,11 +171,14 @@ void reception(sites *demandeur, sites *k, int socket){ //Comportement lors de l
     }
 
     if(strcmp(msgRecu,"Je suis le jeton")){
-        printf("Processus %d : Jeton reçu", (*k).addr.sin_addr.s_addr);
-		(*k).jeton_present = 1;
+        printf("Processus %d : Jeton reçu", (*args->k).addr.sin_addr.s_addr);
+		(*args->k).jeton_present = 1;
     }else if(strcmp(msgRecu,"Je suis une demande")) {
-		printf("Processus %d : Demande reçue", (*k).addr.sin_addr.s_addr);
-		recepDemande(demandeur, k, socket);
+		printf("Processus %d : Demande reçue", (*args->k).addr.sin_addr.s_addr);
+		sites demandeur = (*args->k);
+		demandeur.addr.sin_addr.s_addr = addrExp.sin_addr.s_addr;
+		demandeur.addr.sin_port = addrExp.sin_port;
+		recepDemande(&demandeur, args->k, socket);
 	}else{
         printf("Erreur à la réception");
         close(socket);
@@ -218,7 +212,11 @@ int main(int argc, char *argv[]){
     
     int Port_Pere = atoi(argv[5]);
     
-    sites site = init(port, IP_Pere, Port_Pere, i, racine);
+    sites sommet = init(port, IP_Pere, Port_Pere, i, racine);
+    
+    printf("\nSite %d initialisé\n", sommet.num);
+    
+    
     
     /* Création de la socket*/
     int dS = socket(PF_INET, SOCK_DGRAM, 0);
@@ -230,10 +228,36 @@ int main(int argc, char *argv[]){
 
     printf("Sommet %d: creation de la socket : ok\n", i);
     
-    
-    
-    
-    close(dS);
-    
+    if(envoyerDemande(&sommet, dS) == 1){ //Je suis la racine
+        printf("Je suis la racine donc je rentre en SC");
+        
+    } else
+        printf("J'ai envoyé la demande à mon père");
 
+
+	pthread_t threads;
+
+	struct paramsFonctionThread tabParams;
+
+	struct predicatRdv jeton;
+	pthread_mutex_init(&(jeton.lock), NULL);
+	pthread_cond_init(&(jeton.have_jeton), NULL);
+	jeton.nbSitesAvecToken = 1;
+
+	tabParams.k = &sommet;
+	tabParams.socket = dS;
+	tabParams.idThread = i;
+	tabParams.varPartagee = &jeton;
+
+	if (pthread_create(&threads, NULL, reception, &tabParams) != 0){
+		perror("Erreur création thread");
+		exit(1);
+	}
+
+	pthread_join(threads, NULL);
+
+	printf("Thread principal : fin de tous les threads secondaires\n");
+	//je termine proprement !
+	pthread_exit(NULL);
+	close(dS);
 }
