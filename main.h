@@ -14,7 +14,7 @@ struct sites {
 	int jeton_present, est_demandeur, estEn_SC, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
-void init(int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
+sites init(int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
 int envoyerDemande(sites *k, int socket); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
@@ -26,7 +26,7 @@ void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le to
 
 void recepDemande(sites *demandeur, sites *k, int socket);//Comportement d'un site lors de la réception d'une requête venant du site k
 
-void reception(sites *k, int socket); //Réception d'un message et choix entre token et demande
+void reception(sites *demandeur, sites *k, int socket); //Réception d'un message et choix entre token et demande
 
 //void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
