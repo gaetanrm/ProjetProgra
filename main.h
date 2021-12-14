@@ -16,17 +16,17 @@ struct sites {
 
 void init(int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
-int envoyerDemande(sites *k); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+int envoyerDemande(sites *k, int socket); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
-void envoyerToken(sites *k); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(sites *k, int socket); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
 
-void finSC(sites* k); //Sorti de la SC
+void finSC(sites* k, int socket); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepDemande(sites *demandeur, sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepDemande(sites *demandeur, sites *k, int socket);//Comportement d'un site lors de la réception d'une requête venant du site k
 
-void reception(sites *k); //Réception d'un message et choix entre token et demande
+void reception(sites *k, int socket); //Réception d'un message et choix entre token et demande
 
 //void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
