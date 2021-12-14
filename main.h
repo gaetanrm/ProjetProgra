@@ -1,3 +1,6 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 #include <stdio.h>
 
 typedef struct sites sites;
@@ -8,10 +11,10 @@ struct sites {
 	sockaddr_in addr;
 	sockaddr_in Next;
 	sockaddr_in Pere; //Site suivant dans la liste d'attente et site père du site
-	int jeton_present, est_demandeur, estEn_SC; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
+	int jeton_present, est_demandeur, estEn_SC, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
-sites init(int port);//Initialisation de tous les sites au démarrage de l'algo
+void init(int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
 int envoyerDemande(sites *k); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
@@ -21,7 +24,7 @@ void finSC(sites* k); //Sorti de la SC
 
 void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
-void recepDemande(sockaddr_in *demandeur, sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
+void recepDemande(sites *demandeur, sites *k);//Comportement d'un site lors de la réception d'une requête venant du site k
 
 void reception(sites *k); //Réception d'un message et choix entre token et demande
 
@@ -38,3 +41,5 @@ Structure de donnée choisi :
 	Des envois de message via le réseau et les sockets pour les requêtes de demande de permission
 	Des envois de message pour transmettre le jeton  
 */
+
+#endif
