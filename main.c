@@ -263,6 +263,7 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
+    envoyerDemande(&sommet, dS);
 	pthread_join(threadEcoute, NULL);
 
 	printf("Thread principal : fin du thread d'écoute\n");
