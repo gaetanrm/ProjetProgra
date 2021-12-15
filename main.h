@@ -25,6 +25,7 @@ struct paramsFonctionThread {
 	int idThread;
 	sites *k;
 	int socket;
+	int boucleEcoute;
 	struct predicatRdv * varPartagee;
 };
 

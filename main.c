@@ -107,7 +107,7 @@ void envoyerToken(sites *k, int socket){ //Envoie du token au Next une fois que 
     char message[100];
     sprintf(message, "Je suis le jeton");
     
-    long int snd = sendto(socket, &message, sizeof(message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));
+    long int snd = sendto(socket, &message, sizeof(message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (snd <= 0) {
         perror("pb d'envoi du jeton");
@@ -157,33 +157,40 @@ void * reception(void * params){ //Comportement lors de la réception du token p
 
     struct sockaddr_in addrExp;
     socklen_t lgAddrExp = sizeof(struct sockaddr_in);
-    
+
     //espace memoire pour recevoir le message
-    char msgRecu[100];
+    char* msgRecu;
     
-    printf("Processus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
-    long int rcv = recvfrom(socket, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
+    printf("\nProcessus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
+
+    while (((*args).boucleEcoute == 0)){
+
+        int rcv = recvfrom((*args).socket, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
       
-    if(rcv < 0){
-        perror("Problème au niveau du recvfrom de reception");
-        close(socket);
-        exit(1);
+        if(rcv < 0){
+            perror("Problème au niveau du recvfrom de reception");
+            close((*args).socket);
+            exit(1);
+        }
+
+        if(strcmp(msgRecu,"Je suis le jeton")){
+            printf("Processus %d : Jeton reçu", (*args->k).addr.sin_addr.s_addr);
+            (*args->k).jeton_present = 1;
+        }
+        else if(strcmp(msgRecu,"Je suis une demande")) {
+            printf("Processus %d : Demande reçue", (*args->k).addr.sin_addr.s_addr);
+            sites demandeur = (*args->k);
+            demandeur.addr.sin_addr.s_addr = addrExp.sin_addr.s_addr;
+            demandeur.addr.sin_port = addrExp.sin_port;
+            recepDemande(&demandeur, args->k, (*args).socket);
+        }
+        else{
+            printf("Erreur à la réception");
+            close((*args).socket);
+            exit(1);
+        }
     }
 
-    if(strcmp(msgRecu,"Je suis le jeton")){
-        printf("Processus %d : Jeton reçu", (*args->k).addr.sin_addr.s_addr);
-		(*args->k).jeton_present = 1;
-    }else if(strcmp(msgRecu,"Je suis une demande")) {
-		printf("Processus %d : Demande reçue", (*args->k).addr.sin_addr.s_addr);
-		sites demandeur = (*args->k);
-		demandeur.addr.sin_addr.s_addr = addrExp.sin_addr.s_addr;
-		demandeur.addr.sin_port = addrExp.sin_port;
-		recepDemande(&demandeur, args->k, socket);
-	}else{
-        printf("Erreur à la réception");
-        close(socket);
-        exit(1);
-    }
 }
 
 /*void recepTocken(sites *k){
@@ -248,6 +255,7 @@ int main(int argc, char *argv[]){
 	tabParams.socket = dS;
 	tabParams.idThread = i;
 	tabParams.varPartagee = &jeton;
+    tabParams.boucleEcoute = 0;
 
 	if (pthread_create(&threads, NULL, reception, &tabParams) != 0){
 		perror("Erreur création thread");
