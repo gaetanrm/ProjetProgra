@@ -163,7 +163,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
     
     printf("\nProcessus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
 
-    while (((*args).boucleEcoute == 0)){
+    while ((*args).boucleEcoute == 0){
 
         int rcv = recvfrom((*args).socket, &msgRecu, sizeof(msgRecu), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
       
@@ -190,6 +190,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit(1);
         }
     }
+    pthread_exit(NULL);
 
 }
 
@@ -238,11 +239,11 @@ int main(int argc, char *argv[]){
     if(envoyerDemande(&sommet, dS) == 1){ //Je suis la racine
         printf("Je suis la racine donc je rentre en SC");
         
-    } else
+    } else {
         printf("J'ai envoyé la demande à mon père");
+    }
 
-
-	pthread_t threads;
+	pthread_t threadEcoute;
 
 	struct paramsFonctionThread tabParams;
 
@@ -257,14 +258,14 @@ int main(int argc, char *argv[]){
 	tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
 
-	if (pthread_create(&threads, NULL, reception, &tabParams) != 0){
+	if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
 		perror("Erreur création thread");
 		exit(1);
 	}
 
-	pthread_join(threads, NULL);
+	pthread_join(threadEcoute, NULL);
 
-	printf("Thread principal : fin de tous les threads secondaires\n");
+	printf("Thread principal : fin du thread d'écoute\n");
 	//je termine proprement !
 	pthread_exit(NULL);
 	close(dS);
