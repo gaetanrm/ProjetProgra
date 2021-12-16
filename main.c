@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <string.h>
 #include "main.h"
+#include "calcul.h"
 
 
 sites init(int port, in_addr IP_p, int Port_p, int num, int rac){ //Initialisation de tous les sites au démarrage de l'algo
@@ -84,7 +85,11 @@ int envoyerDemande(sites* sommet, message* msg, int socket){ 	//Envoie d'une req
 		return 1;
 	} else { //Envoie la demande à son père
 		
-		ssize_t snd = sendto(socket, &msg, sizeof(msg), 0, (struct sockaddr*)&sommet->Pere, sizeof(struct sockaddr_in));
+        printf("Je deviens demandeur car j'envoie une demande a mon père\n");
+        sockaddr_in addrPere = (*sommet).Pere;
+        socklen_t lgAddrPere = sizeof(sockaddr_in);
+        printf("J'envoie la demande à mon père\n");
+		int snd = sendto(socket, msg, sizeof(struct message), 0, (struct sockaddr*)&addrPere, lgAddrPere);
 		/* Traiter TOUTES les valeurs de retour (voir le cours ou la documentation). */
 		if (snd <= 0) {
 			perror("Client:pb d'envoi : ");
@@ -104,10 +109,10 @@ void envoyerToken(sites *k, message* msg, int socket){ //Envoie du token au Next
 
     printf("Processus %d : J'envoi le jeton\n", (*k).num);
     
-    int snd = sendto(socket, msg, sizeof(msg), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    int snd = sendto(socket, &msg, sizeof(struct message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (snd <= 0) {
-        perror("pb d'envoi du jeton");
+        perror("pb d'envoi du jeton\n");
         close(socket); //je libère ressources avant de terminer
         exit(1); //je choisis de quitter le pgm, la suite depend de
         // la reussite de l'envoir de la demande de connexion
@@ -140,10 +145,13 @@ void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site 
         if ((*k).est_demandeur == 1){
             (*k).Next.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
             (*k).Next.sin_port = (*msg).demandeur.sin_port;
+            printf("J'ai recu une demande et je suis la racine mais je suis deja demandeur, donc il devient mon Next\n");
         }else{
+            printf("J'envois le token\n");
             envoyerToken(k, msg, socket);
         }
     }else{
+        printf("Je renvoie la demande\n");
         envoyerDemande(k, msg, socket);
     }
     (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
@@ -155,30 +163,34 @@ void * reception(void * params){ //Comportement lors de la réception du token p
                             //Créer une socket qui recevra le jeton
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
 
-    struct sockaddr_in addrExp;
+    sockaddr_in addrExp;
     socklen_t lgAddrExp = sizeof(struct sockaddr_in);
 
     //espace memoire pour recevoir le message
     message msg;
+    calcul(1);
     
     printf("\nProcessus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
 
     while ((*args).boucleEcoute == 0){
 
-        int rcv = recvfrom((*args).socket, &msg, sizeof(msg), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
-      
+        int rcv = recvfrom((*args).socket, &msg, sizeof(struct message), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
+
         if(rcv < 0){
             perror("Problème au niveau du recvfrom de reception");
             close((*args).socket);
             exit(1);
         }
 
+        printf("J'ai reçu : %d\n", msg.typeMessage);
+        printf("L'expéditeur : %u\n", msg.demandeur.sin_addr.s_addr);
+
         if(msg.typeMessage == 1){
-            printf("Processus %d : Jeton reçu", (*args->k).addr.sin_addr.s_addr);
+            printf("Processus %u : Jeton reçu\n", (*args->k).addr.sin_addr.s_addr);
             (*args->k).jeton_present = 1;
         }
         else if(msg.typeMessage == 0) {
-            printf("Processus %d : Demande reçue", (*args->k).addr.sin_addr.s_addr);
+            printf("Processus %u : Demande reçue\n", (*args->k).addr.sin_addr.s_addr);
             recepDemande(&msg, args->k, (*args).socket);
         }
         else{
@@ -219,8 +231,6 @@ int main(int argc, char *argv[]){
     
     sites sommet = init(port, IP_Pere, Port_Pere, i, racine);
     
-    printf("\nSite %d initialisé\n", sommet.num);
-    
     
     
     /* Création de la socket*/
@@ -231,17 +241,12 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    printf("Sommet %d: creation de la socket : ok\n", i);
-    
-    message msg;
-    msg.typeMessage = 0;
-    msg.demandeur = sommet.addr;
-    if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
-        printf("Je suis la racine donc je rentre en SC");
-        
-    } else {
-        printf("J'ai envoyé la demande à mon père");
+    if (bind(dS, (const struct sockaddr *)&sommet, sizeof(sommet)) < 0){ 
+        perror("Erreur bind ecoute: ");
+        exit(1);
     }
+
+    printf("Sommet %d: creation de la socket : ok\n", i);
 
 	pthread_t threadEcoute;
 
@@ -263,7 +268,17 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-    envoyerDemande(&sommet, &msg, dS);
+    message msg;
+    msg.typeMessage = 0;
+    msg.demandeur = sommet.addr;
+
+    if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
+        printf("Je suis la racine donc je rentre en SC");
+        
+    } else {
+        printf("J'ai envoyé la demande à mon père");
+    }
+
 	pthread_join(threadEcoute, NULL);
 
 	printf("Thread principal : fin du thread d'écoute\n");
