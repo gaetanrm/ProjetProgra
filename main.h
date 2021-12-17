@@ -15,11 +15,10 @@ struct sites {
 	int jeton_present, est_demandeur, estEn_SC, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
-struct predicatRdv {
+/*struct predicatRdv {
   pthread_mutex_t lock;
   pthread_cond_t have_jeton;
-  int nbSitesAvecToken;
-};
+};*/
 
 // structure pour regrouper les paramètres d'un thread. 
 struct paramsFonctionThread {
@@ -27,7 +26,7 @@ struct paramsFonctionThread {
 	sites *k;
 	int socket;
 	int boucleEcoute;
-	struct predicatRdv * varPartagee;
+	//struct predicatRdv * varPartagee;
 };
 
 struct message {
@@ -42,8 +41,6 @@ int envoyerDemande(sites *k, message* msg, int socket); //Envoie d'une requête 
 void envoyerToken(sites *k, message* msg, int socket); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
 
 void finSC(sites* k, int socket); //Sorti de la SC
-
-void calculSC();//Calcul pour simuler une entrée en SC pour un site ayant le token
 
 void recepDemande(message* msg, sites *k, int socket);//Comportement d'un site lors de la réception d'une requête venant du site k
 

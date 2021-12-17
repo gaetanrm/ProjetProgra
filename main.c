@@ -76,7 +76,8 @@ in_addr** connaitreIP() {
 int envoyerDemande(sites* sommet, message* msg, int socket){ 	//Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 								//resultat: 1 si il est la racine, 0 si il a envoyé la demande à qq d'autre 
 
-    if ((*sommet).addr.sin_addr.s_addr == (*msg).demandeur.sin_addr.s_addr){
+    if (((*sommet).addr.sin_addr.s_addr == (*msg).demandeur.sin_addr.s_addr) && (sommet->addr.sin_port == msg->demandeur.sin_port)){
+        printf("Je deviens demandeur\n");
         (*sommet).est_demandeur = 1;
     }
 
@@ -84,8 +85,6 @@ int envoyerDemande(sites* sommet, message* msg, int socket){ 	//Envoie d'une req
 		//FAUX (*k).estEn_SC = 1;
 		return 1;
 	} else { //Envoie la demande à son père
-		
-        printf("Je deviens demandeur car j'envoie une demande a mon père\n");
         sockaddr_in addrPere = (*sommet).Pere;
         socklen_t lgAddrPere = sizeof(sockaddr_in);
         printf("J'envoie la demande à mon père\n");
@@ -109,8 +108,11 @@ void envoyerToken(sites *k, message* msg, int socket){ //Envoie du token au Next
 
     printf("Processus %d : J'envoi le jeton\n", (*k).num);
     
-    int snd = sendto(socket, &msg, sizeof(struct message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    int snd = sendto(socket, msg, sizeof(struct message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
+    (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
+    (*k).Next.sin_port = 0;
+
     if (snd <= 0) {
         perror("pb d'envoi du jeton\n");
         close(socket); //je libère ressources avant de terminer
@@ -118,7 +120,7 @@ void envoyerToken(sites *k, message* msg, int socket){ //Envoie du token au Next
         // la reussite de l'envoir de la demande de connexion
     }
     
-    printf("Processus %u : Jeton envoyé \n", (*k).addr.sin_addr.s_addr);
+    printf("Processus %u : Jeton envoyé \n", (*k).num);
     
     (*k).jeton_present = 0;
 }
@@ -135,27 +137,31 @@ void finSC(sites* k, int socket){ //Sorti de la SC
     }
 }
 
-void calculSC(){ //Calcul pour simuler une entrée en SC pour un site ayant le token
-    //on verra apres pas important pour le moment
-}
-
 
 void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site lors de la réception d'une requête venant du site k
     if ((*k).Pere.sin_addr.s_addr == 0){
+        (*k).Next.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
+        (*k).Next.sin_port = (*msg).demandeur.sin_port;
         if ((*k).est_demandeur == 1){
-            (*k).Next.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
-            (*k).Next.sin_port = (*msg).demandeur.sin_port;
             printf("J'ai recu une demande et je suis la racine mais je suis deja demandeur, donc il devient mon Next\n");
         }else{
-            printf("J'envois le token\n");
-            envoyerToken(k, msg, socket);
+            if (k->jeton_present == 1){
+                printf("J'envois le token\n");
+                (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
+                (*k).Pere.sin_port = (*msg).demandeur.sin_port;
+                msg->typeMessage = 1;
+                msg->demandeur = k->addr;
+                envoyerToken(k, msg, socket);
+            }else{
+                printf("Il devient mon Next, mais je n'ai pas encore reçu le jeton\n");
+            }
         }
     }else{
         printf("Je renvoie la demande\n");
         envoyerDemande(k, msg, socket);
+        (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
+        (*k).Pere.sin_port = (*msg).demandeur.sin_port;
     }
-    (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
-    (*k).Pere.sin_port = (*msg).demandeur.sin_port;
 }
 
 //Fonction qu'on va appeler dans le thread qui sera en attente
@@ -182,15 +188,17 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit(1);
         }
 
-        printf("J'ai reçu : %d\n", msg.typeMessage);
-        printf("L'expéditeur : %u\n", msg.demandeur.sin_addr.s_addr);
+        printf("L'expéditeur : %u\n", msg.demandeur.sin_port);
 
         if(msg.typeMessage == 1){
-            printf("Processus %u : Jeton reçu\n", (*args->k).addr.sin_addr.s_addr);
+            printf("Processus %u : Jeton reçu\n", (*args->k).num);
             (*args->k).jeton_present = 1;
+            calcul(2);
+            printf("J'ai terminé ma Section Critique\n");
+            finSC(args->k, args->socket);
         }
         else if(msg.typeMessage == 0) {
-            printf("Processus %u : Demande reçue\n", (*args->k).addr.sin_addr.s_addr);
+            printf("Processus %u : Demande reçue\n", (*args->k).num);
             recepDemande(&msg, args->k, (*args).socket);
         }
         else{
@@ -252,15 +260,14 @@ int main(int argc, char *argv[]){
 
 	struct paramsFonctionThread tabParams;
 
-	struct predicatRdv jeton;
+	/*struct predicatRdv jeton;
 	pthread_mutex_init(&(jeton.lock), NULL);
-	pthread_cond_init(&(jeton.have_jeton), NULL);
-	jeton.nbSitesAvecToken = 1;
+	pthread_cond_init(&(jeton.have_jeton), NULL);*/
 
 	tabParams.k = &sommet;
 	tabParams.socket = dS;
 	tabParams.idThread = i;
-	tabParams.varPartagee = &jeton;
+	//tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
 
 	if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
@@ -269,15 +276,31 @@ int main(int argc, char *argv[]){
 	}
 
     message msg;
-    msg.typeMessage = 0;
-    msg.demandeur = sommet.addr;
+    int userReady = 1;
 
-    if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
-        printf("Je suis la racine donc je rentre en SC");
-        
-    } else {
-        printf("J'ai envoyé la demande à mon père");
-    }
+    while (userReady != 0){ 
+
+        printf("Tapez 0 si vous voulez arreter le site, et 1 pour envoyer une demande\n");
+        scanf("%d", &userReady);
+
+        if (userReady == 0){
+            tabParams.boucleEcoute = 1;
+        }else if (userReady == 1){
+            msg.typeMessage = 0;
+            msg.demandeur = sommet.addr;
+
+            if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
+                printf("Je suis la racine donc je rentre en SC\n");
+                calcul(2);
+                printf("Fin de ma Section Critique \n");
+                finSC(&sommet, dS);
+            } else {
+                printf("J'ai envoyé la demande à mon père\n");
+            }
+        }else{
+            printf("Erreur, veuillez réessayer !\n");
+        }
+    } //Pour arrêter le thread au bout de 20 sec d'inactivité.
 
 	pthread_join(threadEcoute, NULL);
 
