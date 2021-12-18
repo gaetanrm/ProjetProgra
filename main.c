@@ -199,6 +199,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         }
         else if(msg.typeMessage == 0) {
             printf("Processus %u : Demande reçue\n", (*args->k).num);
+            calcul(1);
             recepDemande(&msg, args->k, (*args).socket);
         }
         else{
