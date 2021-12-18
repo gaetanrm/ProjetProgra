@@ -87,7 +87,6 @@ int envoyerDemande(sites* sommet, message* msg, int socket){ 	//Envoie d'une req
 	} else { //Envoie la demande à son père
         sockaddr_in addrPere = (*sommet).Pere;
         socklen_t lgAddrPere = sizeof(sockaddr_in);
-        printf("J'envoie la demande à mon père\n");
 		int snd = sendto(socket, msg, sizeof(struct message), 0, (struct sockaddr*)&addrPere, lgAddrPere);
 		/* Traiter TOUTES les valeurs de retour (voir le cours ou la documentation). */
 		if (snd <= 0) {
@@ -144,9 +143,10 @@ void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site 
         (*k).Next.sin_port = (*msg).demandeur.sin_port;
         if ((*k).est_demandeur == 1){
             printf("J'ai recu une demande et je suis la racine mais je suis deja demandeur, donc il devient mon Next\n");
+            (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
+            (*k).Pere.sin_port = (*msg).demandeur.sin_port;
         }else{
             if (k->jeton_present == 1){
-                printf("J'envois le token\n");
                 (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
                 (*k).Pere.sin_port = (*msg).demandeur.sin_port;
                 msg->typeMessage = 1;
@@ -178,7 +178,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
     
     printf("\nProcessus %u: j'attends de recevoir un message du serveur \n", (*args->k).addr.sin_addr.s_addr);
 
-    while ((*args).boucleEcoute == 0){
+    while (args->boucleEcoute == 0){
 
         int rcv = recvfrom((*args).socket, &msg, sizeof(struct message), 0, (struct sockaddr*)&addrExp, &lgAddrExp);
 
@@ -188,7 +188,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit(1);
         }
 
-        printf("L'expéditeur : %u\n", msg.demandeur.sin_port);
+        printf("L'expéditeur : %u\n", ntohs(msg.demandeur.sin_port));
 
         if(msg.typeMessage == 1){
             printf("Processus %u : Jeton reçu\n", (*args->k).num);
@@ -207,6 +207,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit(1);
         }
     }
+    printf("Thread écoute terminé");
     pthread_exit(NULL);
 
 }
@@ -264,6 +265,11 @@ int main(int argc, char *argv[]){
 	pthread_mutex_init(&(jeton.lock), NULL);
 	pthread_cond_init(&(jeton.have_jeton), NULL);*/
 
+    int tempsAlgo;
+    printf("Rentrez le nombre de demande que vous souhaitez pour ce site");
+    scanf("%d", &tempsAlgo);
+    calcul(3);
+
 	tabParams.k = &sommet;
 	tabParams.socket = dS;
 	tabParams.idThread = i;
@@ -276,10 +282,11 @@ int main(int argc, char *argv[]){
 	}
 
     message msg;
-    int userReady = 1;
+    /*int userReady = 1; //Si on veut choisir quand chaque site fait une demande.
 
-    while (userReady != 0){ 
+    while (tabParams.boucleEcoute == 0){ 
 
+        calcul(2);
         printf("Tapez 0 si vous voulez arreter le site, et 1 pour envoyer une demande\n");
         scanf("%d", &userReady);
 
@@ -300,7 +307,28 @@ int main(int argc, char *argv[]){
         }else{
             printf("Erreur, veuillez réessayer !\n");
         }
-    } //Pour arrêter le thread au bout de 20 sec d'inactivité.
+    }*/
+
+    for (int i = 0; i < tempsAlgo; i++){
+        msg.typeMessage = 0;
+        msg.demandeur = sommet.addr;
+
+        if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
+            if (sommet.jeton_present == 1){
+                printf("Je suis la racine donc je rentre en SC\n");
+                calcul(2);
+                printf("Fin de ma Section Critique \n");
+                finSC(&sommet, dS);
+            }else{
+                printf("je suis la racine mais je n'ai pas encore le token donc j'attends");
+                sommet.Next.sin_addr.s_addr = sommet.addr.sin_addr.s_addr;
+                sommet.Next.sin_port = sommet.addr.sin_port;
+                calcul(2);
+            }
+        } else {
+            printf("J'ai envoyé la demande à mon père\n");
+        }
+    }
 
 	pthread_join(threadEcoute, NULL);
 

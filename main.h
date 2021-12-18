@@ -26,6 +26,7 @@ struct paramsFonctionThread {
 	sites *k;
 	int socket;
 	int boucleEcoute;
+	//int nbTours; //si chaque site ont le meme nb de demande mais pas super.
 	//struct predicatRdv * varPartagee;
 };
 
