@@ -41,6 +41,13 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             (*args->k).jeton_present = 1;
             printf("Site %d : Je rentre en section critique", (*args->k).num);
             calcul(7);
+            printf("Pour sortir de la SC tapez 1 : ");
+            int fSC = 0;
+            scanf("%d", &fSC);
+            while (fSC != 1) {
+                int i = 0;
+                i++;
+            }
             printf("Site %d : J'ai terminé ma Section Critique\n", (*args->k).num);
             finSC(args->k, args->socket);
         }
