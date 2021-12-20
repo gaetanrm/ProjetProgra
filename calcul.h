@@ -1,3 +1,3 @@
 #include <unistd.h>
 
-void calcul (int sec);
+void calcul (int a);
