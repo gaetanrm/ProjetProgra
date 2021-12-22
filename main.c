@@ -14,6 +14,7 @@
 #include "envJeton.h"
 #include "recep.h"
 
+// TODO A la fin faire en sorte d'afficher qui est son père pou r avoir une idée de l'architecture finale
 
 in_addr** connaitreIP() {
     char s[256];
@@ -72,8 +73,9 @@ int main(int argc, char *argv[]){
     sites sommet = init(port, IP_Pere, Port_Pere, i, racine);
     
     
-    
-    /* Création de la socket*/
+    /* UDP
+     
+    // Création de la socket
     int dS = socket(PF_INET, SOCK_DGRAM, 0);
 
     if(dS == -1){
@@ -85,8 +87,43 @@ int main(int argc, char *argv[]){
         perror("Erreur bind ecoute ");
         exit(1);
     }
+    
 
-    //printf("Sommet %d: creation de la socket : ok\n", i);
+    //printf("Sommet %d: creation de la socket UDP : ok\n", i);
+    
+    FIN UDP */
+    
+    
+    /* TCP */
+    
+    // Création de la socket d'ecoute pour TCP
+    int dS = socket(PF_INET, SOCK_STREAM, 0);
+
+    if(dS == -1){
+        perror("problème création socket du sommet ");
+        exit(1);
+    }
+
+    if (bind(dS, (const struct sockaddr *)&sommet, sizeof(struct sockaddr)) < 0){
+        perror("Erreur bind ecoute ");
+        exit(1);
+    }
+
+    printf("\nSite %d: creation de la socket : ok\n", i);
+    
+    // Passer la socket en mode ecoute
+    
+    int ecoute = listen(dS,10); //10 est le nb max de demande qui peuvent être mises en file d'attente
+    if (ecoute < 0){
+        printf("Site %d : je suis sourd\n", i);
+        close(dS);
+        exit(1);
+    }
+  
+    printf("Site %d: mise en écoute : ok\n", i);
+    
+    /* FIN TCP */
+    
 
 	pthread_t threadEcoute;
 
@@ -97,7 +134,7 @@ int main(int argc, char *argv[]){
 	pthread_cond_init(&(jeton.have_jeton), NULL);*/
 
     int tempsAlgo;
-    printf("Rentrez le nombre de demande que vous souhaitez pour ce site:\n");
+    printf("Rentrez le nombre de demande que vous souhaitez pour ce site :\n");
     scanf("%d", &tempsAlgo);
     calcul(3);
     
@@ -106,7 +143,8 @@ int main(int argc, char *argv[]){
 	tabParams.idThread = i;
 	//tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
-
+    
+    
 	if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
 		perror("Erreur création thread");
 		exit(1);
@@ -115,6 +153,9 @@ int main(int argc, char *argv[]){
     //printf("Site %d : Création du thread pour la réception ok\n", sommet.num);
 
     message msg;
+    msg.typeMessage = 0;
+    msg.demandeur = sommet.addr;
+    
     /*int userReady = 1; //Si on veut choisir quand chaque site fait une demande.
 
     while (tabParams.boucleEcoute == 0){ 
@@ -143,10 +184,11 @@ int main(int argc, char *argv[]){
     }*/
 
     for (int i = 0; i < tempsAlgo; i++){
+        /* Pk on met ça dans la boucle ?
         msg.typeMessage = 0;
-        msg.demandeur = sommet.addr;
+        msg.demandeur = sommet.addr; */
 
-        if(envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
+        if (envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
             while(sommet.jeton_present == 0){
                 printf("Je suis la racine mais je n'ai pas encore le jeton donc j'attends\n");
             }

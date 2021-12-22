@@ -10,19 +10,77 @@
 #include "main.h"
 #include "envJeton.h"
 
-void envoyerToken(sites *k, message* msg, int socket){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
     //Gérer socket et envoi avec valeur de retour
 
+    printf("\n  FONCTION ENVOYER JETON \n");
+    
+    
     printf("Processus %d : J'envoi le jeton\n", (*k).num);
     
-    int snd = sendto(socket, msg, sizeof(struct message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    /* TCP */
+    
+    int dsNext = socket(PF_INET, SOCK_STREAM, 0);
+
+    if(dsNext == -1){
+        perror("Problème création socket du Next dans envoyerToken");
+        exit(1);
+    }
+    
+    //envoyer une demande de connexion au Next.
+    sockaddr_in addrNext = (*k).Next;
+    socklen_t lgAddrNext = sizeof(sockaddr_in);
+    
+    int conn = addrNext.sin_addr.s_addr;
+    conn = connect(dsNext, (struct sockaddr *) &addrNext, lgAddrNext);
+    
+    if (conn < 0){
+        perror ("pb au connect dans la fonction envoyerJeton ");
+        close(s);
+        exit (1);
+    }
+
+    printf("Site %d : demande de connexion à mon Next reussie \n", (*k).num);
+    
+    
+    //J'envoie la taille de l'instruction
+    int tailleInst = sizeof(msg); // TODO *msg ou juste msg ??
+    
+    ssize_t env = send(dsNext, &tailleInst,tailleInst,0);
+    if (env < 1) {
+        printf("Site %d : pb à l'envoi de la taille de l'instruction dans envoyerDemande\n", (*k).num);
+        close (dsNext);
+        exit (1);
+    }
+    
+    printf("Site %d : taille du message transmise \n", (*k).num);
+    
+    //Puis j'envoie l'instruction elle même
+    env = send(dsNext,&msg,sizeof(struct message),0);
+    if (env < 1) {
+        printf("Site %d : pb à l'envoi de la demande\n", (*k).num);
+        close (dsNext);
+        exit (1);
+    }
+    
+    printf("Client : Demande transmise\n");
+    
+    /* FIN TCP */
+    
+    
+    /* UDP
+    int snd = sendto(s, msg, sizeof(struct message), 0, (struct sockaddr*)&k->Next, sizeof(struct sockaddr_in));    //SI pas de next, erreur a l'éxécution !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     if (snd <= 0) {
         perror("pb d'envoi du jeton\n");
-        close(socket); //je libère ressources avant de terminer
-        exit(1); //je choisis de quitter le pgm, la suite depend de
-        // la reussite de l'envoir de la demande de connexion
+        close(s);
+        exit(1);
+        //
     }
+    
+    FIN UDP */
+    
     
     printf("Site %d : Jeton envoyé au processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
     
