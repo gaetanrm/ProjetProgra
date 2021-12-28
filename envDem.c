@@ -25,9 +25,7 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
         
     } else { //Envoie la demande à son père
         printf("Site %d : J'envoi la demande à mon père, le processus %s:%d\n", (*sommet).num, inet_ntoa((*sommet).Pere.sin_addr), ntohs((*sommet).Pere.sin_port));
-        sockaddr_in addrPere = (*sommet).Pere;
-        socklen_t lgAddrPere = sizeof(sockaddr_in);
-        
+
         
         /* TCP */
         
@@ -39,7 +37,13 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
             exit(1);
         }
         
-        printf("Site %d : création de la socket de mon père ok \n", (*sommet).num);
+        printf("Site %d : création de la socket pour communiquer avec mon père ok \n", (*sommet).num);
+        
+        sockaddr_in addrPere;
+        addrPere.sin_addr = (*sommet).Pere.sin_addr;
+        addrPere.sin_port = (*sommet).Pere.sin_port;
+        addrPere.sin_family = AF_INET;
+        socklen_t lgAddrPere = sizeof(struct sockaddr_in);
 
         
         //envoyer une demande de connexion au père.
@@ -51,10 +55,10 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
             exit(1);
         }
 
-        printf("Site %d : demande de connexion à mon père reussie \n", (*sommet).num);
+        printf("Site %d : Demande de connexion à mon père reussie, je suis connecté au site %s:%d \n", (*sommet).num, inet_ntoa(addrPere.sin_addr), ntohs(addrPere.sin_port));
         
         
-        
+        /*
         //J'envoie la taille de l'instruction
         int tailleInst = sizeof(msg); // TODO *msg ou juste msg ??
         
@@ -66,18 +70,22 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
         }
         
         printf("Site %d : Taille du message transmise \n", (*sommet).num);
+         */
+        
+        char message[100];
+        snprintf(message, 100, "%d:%s:%d:", msg->typeMessage, inet_ntoa(msg->demandeur.sin_addr), msg->demandeur.sin_port);
         
         //Puis j'envoie l'instruction elle même
-        env = send(dSPere,&msg,sizeof(struct message),0);
+        ssize_t env = send(dSPere, &message, sizeof(struct message),0);
         if (env < 1) {
             printf("Site %d : pb à l'envoi de la demande\n", (*sommet).num);
             close (dSPere);
             exit (1);
         }
         
-        printf("Site %d : Demande transmise\n", (*sommet).num);
+        printf("Site %d : Demande transmise à mon père \n", (*sommet).num);
         
-        close(dSPere); //Pas sur
+        //close(dSPere); //Pas sur
         
         /* FIN TCP */
         

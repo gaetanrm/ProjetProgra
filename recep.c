@@ -15,63 +15,65 @@
 void * reception(void * params){ //Comportement lors de la réception du token par un site l'ayant demandé
                             //Créer une socket qui recevra le jeton
     
-    printf("\n  FONCTION RECEPTION \n");
+    //Début mise de socket en pointeur, arrêter de faire ctrlZ ici
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
-
+    
     sockaddr_in addrExp;
-    socklen_t lgAddrExp = sizeof(struct sockaddr_in);
-    
-    
-    /* TCP */
-    
-    // Je fais en sorte que ma socket d'ecoute accepte les connexions
-    int dsExp = accept((*args).socket, (struct sockaddr*)&addrExp, &lgAddrExp);
-    
-    if (dsExp < 0){
-        perror ("probleme accept ");
-        close(dsExp);
-        exit (1);
-    }
-    
-    printf("Site %d : le processus %s:%d est connecté \n", (*args->k).num, inet_ntoa(addrExp.sin_addr), ntohs(addrExp.sin_port)); //TODO arguments à vérifier
-    
-    /* FIN TCP */
+    socklen_t lgAddrExp = sizeof(sockaddr_in);
     
     
     //espace memoire pour recevoir le message
-    message msg;
+    char msg[100];
+    
     calcul(1);
-    printf("\nSite %d : j'attends de recevoir un message \n", (*args->k).num);
     
     
     while (args->boucleEcoute == 0){
         
-        /*TCP */
+        printf("\n  FONCTION RECEPTION \n");
         
-        // Je recois la taille de l'instruction
-        int tailleInst;
-        ssize_t recevoirTCP = recv (dsExp, &tailleInst, sizeof(tailleInst),0);
-      
-        if(recevoirTCP < 0){
-            perror("pb à la réception de la taille de l'instruction ");
-            close((*args).socket);
-            exit(1);
-          }
+        printf("\nSite %d : j'attends de recevoir un message\n", (*args->k).num);
+        
+        /* TCP */
+        
+        printf("Site %d : J'attend qu'un site se connecte à moi\n", (*args->k).num);
+        
+        // Je fais en sorte que ma socket d'ecoute accepte les connexions
+        int dsExp = accept((*(*args).socket), (struct sockaddr*)&addrExp, &lgAddrExp);
+        
+        if (dsExp < 0){
+            perror ("probleme accept ");
+            close(dsExp);
+            exit (1);
+        }
+    /*
+        if(ntohs(addrExp.sin_port) != 6001){
+            printf("Pas le bon site !!!");
+            printf("'\n'\n'\n'\n'\n'\n'\n'\n'\n'\n'\n");
+        }*/
+        printf("Site %d : le site est connecté \n", (*args->k).num);
 
-         printf("Site %d : J'ai bien reçu la taille de l'instruction : %d \n", (*args->k).num, tailleInst);
-
-        // Puis l'instruction elle même
-        recevoirTCP = recv (dsExp, &msg, sizeof(struct message), 0);
+        // Je recois la demande
+        int recevoirTCP = recv (dsExp, &msg, sizeof(msg), 0);
       
          if(recevoirTCP < 0){
-              perror("Problème au niveau du 2ieme recv de reception");
-              close((*args).socket);
+              perror("Problème au niveau du recv de reception");
+              close((*(*args).socket));
                exit(1);
           }
 
          printf("Site %d : J'ai bien reçu le message\n", (*args->k).num);
         
-        close(dsExp); //Pas sur
+        message msgRecu;
+        
+        char *ptr = strtok(msg, ":");
+        msgRecu.typeMessage = atoi(ptr);
+        ptr = strtok(NULL, ":");
+        msgRecu.demandeur.sin_addr.s_addr = inet_addr(ptr);
+        ptr =  strtok(NULL, ":");
+        msgRecu.demandeur.sin_port = atoi(ptr);
+        
+        //printf("%d", msgRecu.typeMessage);
         
         /* FIN TCP */
 
@@ -87,13 +89,14 @@ void * reception(void * params){ //Comportement lors de la réception du token p
 
         //printf("L'expéditeur : %u\n", ntohs(msg.demandeur.sin_port));
          
-         FIN UDP */
+        FIN UDP */
 
-        if(msg.typeMessage == 1){
-            printf("Site %d : Jeton reçu du processus %s:%d\n", (*args->k).num, inet_ntoa(msg.demandeur.sin_addr), ntohs(msg.demandeur.sin_port));
+        if(msgRecu.typeMessage == 1){ //Si je reçois un jeton
+            printf("Site %d : Jeton reçu du processus %s:%d\n", (*args->k).num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             (*args->k).jeton_present = 1;
             printf("Site %d : Je rentre en section critique", (*args->k).num);
             calcul(7);
+            
             printf("Pour sortir de la SC tapez 1 : ");
             int fSC = 0;
             scanf("%d", &fSC);
@@ -101,26 +104,32 @@ void * reception(void * params){ //Comportement lors de la réception du token p
                 int i = 0;
                 i++;
             }
+            
             printf("Site %d : J'ai terminé ma Section Critique\n", (*args->k).num);
-            finSC(args->k, args->socket);
+            
+            finSC(args->k, (*(*args).socket));
         }
-        else if(msg.typeMessage == 0) {
-            printf("Site %d : Demande reçue du processus %s:%d\n", (*args->k).num, inet_ntoa(msg.demandeur.sin_addr), ntohs(msg.demandeur.sin_port));
+        else if(msgRecu.typeMessage == 0) { //Si je reçois une demande de SC
+            printf("Site %d : Demande de jeton reçue du processus %s:%d\n", (*args->k).num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             calcul(2);
-            recepDemande(&msg, args->k, (*args).socket);
+            recepDemande(&msgRecu, args->k, (*(*args).socket));
         }
-        else{
-            printf("Erreur à la réception");
-            close((*args).socket);
+        else{ //Si
+            printf("Site %d : Le message reçu n'est ni un jeton ni une demande", (*args->k).num);
+            close((*(*args).socket));
             exit(1);
         }
-    }
+        close(dsExp); //Pas sur
+    } 
     printf("Thread écoute terminé");
     pthread_exit(NULL);
 
 }
 
 
+        
+        
+        
 void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site lors de la réception d'une requête venant du site k
     
     printf("\n  FONCTION RECEP DEMANDE \n");
@@ -138,6 +147,7 @@ void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site 
                 (*k).Pere.sin_port = (*msg).demandeur.sin_port;
                 msg->typeMessage = 1;
                 msg->demandeur = k->addr;
+                printf("Site %d : J'ai le jeton donc je l'envoie\n", (*k).num);
                 envoyerToken(k, msg, socket);
                 
             }else{ //Si j'ai pas le jeton

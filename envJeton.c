@@ -16,9 +16,6 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     printf("\n  FONCTION ENVOYER JETON \n");
     
     
-    printf("Processus %d : J'envoi le jeton\n", (*k).num);
-    
-    
     /* TCP */
     
     int dsNext = socket(PF_INET, SOCK_STREAM, 0);
@@ -43,7 +40,8 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
 
     printf("Site %d : demande de connexion à mon Next reussie \n", (*k).num);
     
-    
+    /*
+     
     //J'envoie la taille de l'instruction
     int tailleInst = sizeof(msg); // TODO *msg ou juste msg ??
     
@@ -55,17 +53,22 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     }
     
     printf("Site %d : taille du message transmise \n", (*k).num);
+     
+     */
     
-    //Puis j'envoie l'instruction elle même
-    env = send(dsNext,&msg,sizeof(struct message),0);
+    char msgJ[100];
+    snprintf(msgJ, 100, "%d:%s:%d:", msg->typeMessage, inet_ntoa(msg->demandeur.sin_addr), msg->demandeur.sin_port);
+    
+    //Puis j'envoie le jeton
+    int env = send(dsNext, &msgJ, sizeof(msgJ),0);
     if (env < 1) {
         printf("Site %d : pb à l'envoi de la demande\n", (*k).num);
         close (dsNext);
         exit (1);
     }
     
-    printf("Client : Demande transmise\n");
-    
+    printf("Site %d : Jeton envoyé au processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+
     /* FIN TCP */
     
     
@@ -81,9 +84,7 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     
     FIN UDP */
     
-    
-    printf("Site %d : Jeton envoyé au processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
-    
+        
     //J'ai envoyé le jeton à mon Next donc je met mon Next à null
     (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
     (*k).Next.sin_port = 0;

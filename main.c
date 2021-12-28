@@ -31,16 +31,22 @@ in_addr** connaitreIP() {
 
 
 void finSC(sites* k, int socket){ //Sorti de la SC
+    
+    printf("\n FONCTION FINSC \n");
     (*k).est_demandeur = 0;
     if ((*k).Next.sin_addr.s_addr != inet_addr("0.0.0.0")){ //Si j'ai un Next je lui envoi le jeton
         message msg;
         msg.typeMessage = 1;
         msg.demandeur = (*k).addr;
         
-        printf("J'envoi le jeton à mon next, le processus %s:%d\n", inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+        printf("Site %d : J'envoi le jeton à mon next, le processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
         envoyerToken(k, &msg, socket);
         (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
         (*k).Next.sin_port = 0;
+        
+        printf("\n SUITE FONCTION FINSC \n");
+        
+        printf("Site %d : J'ai mis mon next à null\n", (*k).num);
     }
 }
 
@@ -70,8 +76,10 @@ int main(int argc, char *argv[]){
     
     int Port_Pere = atoi(argv[5]);
     
-    sites sommet = init(port, IP_Pere, Port_Pere, i, racine);
+    sites sommet;
+    init(&sommet, port, IP_Pere, Port_Pere, i, racine);
     
+    //printf("\nIP : %s \nPort : %d \nIP du père : %s \nPort du père : %d \nIP du Next : %u \nPort du Next : %d \n", inet_ntoa(sommet.addr.sin_addr), ntohs(sommet.addr.sin_port), inet_ntoa(sommet.Pere.sin_addr), ntohs(sommet.Pere.sin_port), sommet.Next.sin_addr.s_addr, sommet.Next.sin_port);
     
     /* UDP
      
@@ -91,7 +99,7 @@ int main(int argc, char *argv[]){
 
     //printf("Sommet %d: creation de la socket UDP : ok\n", i);
     
-    FIN UDP */
+     FIN UDP */
     
     
     /* TCP */
@@ -122,7 +130,7 @@ int main(int argc, char *argv[]){
   
     printf("Site %d: mise en écoute : ok\n", i);
     
-    /* FIN TCP */
+     /* FIN TCP */
     
 
 	pthread_t threadEcoute;
@@ -134,12 +142,12 @@ int main(int argc, char *argv[]){
 	pthread_cond_init(&(jeton.have_jeton), NULL);*/
 
     int tempsAlgo;
-    printf("Rentrez le nombre de demande que vous souhaitez pour ce site :\n");
+    printf("\n Rentrez le nombre de demande que vous souhaitez pour ce site :\n");
     scanf("%d", &tempsAlgo);
-    calcul(3);
+    //calcul(3);
     
 	tabParams.k = &sommet;
-	tabParams.socket = dS;
+	tabParams.socket = &dS;
 	tabParams.idThread = i;
 	//tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
@@ -189,8 +197,10 @@ int main(int argc, char *argv[]){
         msg.demandeur = sommet.addr; */
 
         if (envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
-            while(sommet.jeton_present == 0){
-                printf("Je suis la racine mais je n'ai pas encore le jeton donc j'attends\n");
+            printf("Je suis la racine mais je n'ai pas encore le jeton donc j'attends\n");
+            while(sommet.jeton_present == 0){ //TODO Pas bien
+                int a = 0;
+                a++;
             }
             if (sommet.jeton_present == 1){ //Si j'ai le jeton alors je rentre en SC
                 printf("Je suis la racine donc je rentre en SC\n");

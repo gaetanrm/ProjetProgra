@@ -24,18 +24,18 @@ struct sites {
 struct paramsFonctionThread {
 	int idThread;
 	sites *k;
-	int socket;
+	int *socket;
 	int boucleEcoute;
 	//int nbTours; //si chaque site ont le meme nb de demande mais pas super.
 	//struct predicatRdv * varPartagee;
 };
 
 struct message {
-	int typeMessage; // 0 si c'est une demande, 1 si c'est le token
+	int typeMessage; // 0 si c'est une demande, 1 si c'est le jeton
 	sockaddr_in demandeur;
 };
 
-sites init(int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
+void init(sites *sommet, int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
 int envoyerDemande(sites *k, message* msg, int socket); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
@@ -50,6 +50,8 @@ void * reception(void* params); //Réception d'un message et choix entre token e
 //void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé
 
 in_addr** connaitreIP();
+
+void envoyer(message msg);
 
 /*
 Structure de donnée choisi :
