@@ -9,12 +9,12 @@
 #include <string.h>
 #include "main.h"
 
-void init(sites *sommet, int port, in_addr IP_p, int Port_p, int num, int rac){ //Initialisation de tous les sites au démarrage de l'algo
+void init(sites *sommet, int port, in_addr IP_p, int Port_p, int n, int rac){ //Initialisation de tous les sites au démarrage de l'algo
     //Chacun doit envoyer son num aux autres pour savoir qui est le 1, donc qui sera la racine au départ de l'algo même si il n'a pas fait de demande.
     //C'est juste pour que l'algo puisse fonctionner ensuite car il a besoin d'une racine pour cela
     
     //sites sommet;
-    (*sommet).num = num;
+    (*sommet).num = n;
     
     printf("\n~~~~~ INITIALISATION DU SITE %d ~~~~~\n\n", (*sommet).num);
     
@@ -52,6 +52,16 @@ void init(sites *sommet, int port, in_addr IP_p, int Port_p, int num, int rac){ 
     
     (*sommet).est_demandeur = 0;
     (*sommet).estEn_SC = 0;
+    printf("\nEst demandeur ? : non\n");
+    printf("Est en SC ? : non\n");
+    
+    if((*sommet).num == rac){ //Si je suis la racine j'ai le jeton
+        (*sommet).jeton_present = 1;
+        printf("Jeton présent ? : Oui\n");
+    } else {
+        printf("Jeton présent ? : non\n");
+    }
+
     
     printf("\n~~~~~ SITE %d INITIALISÉ ~~~~~\n", (*sommet).num);
     //printf("\nIP : %s \nPort : %d \nIP du père : %s \nPort du père : %d \nIP du Next : %u \nPort du Next : %d \nJeton présent ? %d\n", inet_ntoa(sommet.addr.sin_addr), ntohs(sommet.addr.sin_port), inet_ntoa(sommet.Pere.sin_addr), ntohs(sommet.Pere.sin_port), sommet.Next.sin_addr.s_addr, sommet.Next.sin_port, sommet.jeton_present);

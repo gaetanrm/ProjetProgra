@@ -90,4 +90,5 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     (*k).Next.sin_port = 0;
     
     (*k).jeton_present = 0;
+    close(dsNext);
 }

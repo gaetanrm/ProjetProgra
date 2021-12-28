@@ -14,7 +14,9 @@
 #include "envJeton.h"
 #include "recep.h"
 
-// TODO A la fin faire en sorte d'afficher qui est son père pou r avoir une idée de l'architecture finale
+// TODO A la fin faire en sorte d'afficher qui est son père pour avoir une idée de l'architecture finale
+// TODO Pouvoir choisir le nombre de sommets qu'on veut qu'il y ai dans notre arbre et ça ouvre autant de terminal que de sommets
+// TODO Le rendre tolérant aux pannes
 
 in_addr** connaitreIP() {
     char s[256];
@@ -48,6 +50,7 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         
         printf("Site %d : J'ai mis mon next à null\n", (*k).num);
     }
+    printf("Je n'ai pas de Next donc je garde le jeton\n");
 }
 
 /*void recepTocken(sites *k){
@@ -191,31 +194,13 @@ int main(int argc, char *argv[]){
         }
     }*/
 
+    
     for (int i = 0; i < tempsAlgo; i++){
         /* Pk on met ça dans la boucle ?
         msg.typeMessage = 0;
         msg.demandeur = sommet.addr; */
 
-        if (envoyerDemande(&sommet, &msg, dS) == 1){ //Je suis la racine
-            printf("Je suis la racine mais je n'ai pas encore le jeton donc j'attends\n");
-            while(sommet.jeton_present == 0){ //TODO Pas bien
-                int a = 0;
-                a++;
-            }
-            if (sommet.jeton_present == 1){ //Si j'ai le jeton alors je rentre en SC
-                printf("Je suis la racine donc je rentre en SC\n");
-                calcul(2);
-                printf("Fin de ma Section Critique \n");
-                finSC(&sommet, dS);
-            }/*else{
-                printf("je suis la racine mais je n'ai pas encore le token donc j'attends");
-                sommet.Next.sin_addr.s_addr = sommet.addr.sin_addr.s_addr;
-                sommet.Next.sin_port = sommet.addr.sin_port;
-                calcul(2);
-            }
-        } else {
-            printf("J'ai envoyé la demande à mon père\n");*/
-        }
+        envoyerDemande(&sommet, &msg, dS);
     }
 
 	pthread_join(threadEcoute, NULL);

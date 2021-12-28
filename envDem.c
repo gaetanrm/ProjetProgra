@@ -9,6 +9,7 @@
 #include <string.h>
 #include "main.h"
 #include "envDem.h"
+#include "calcul.h"
 
 int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
                                 //resultat: 1 si il est la racine, 0 si il a envoyé la demande à qq d'autre
@@ -20,7 +21,24 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
         (*sommet).est_demandeur = 1;
     }
 
-    if ((*sommet).Pere.sin_addr.s_addr == inet_addr("0.0.0.0")){ //Si je suis la racine
+    if ((*sommet).Pere.sin_addr.s_addr == inet_addr("0.0.0.0") && (*sommet).jeton_present == 1){ //Si je suis la racine et que j'ai le jeton
+        //Je rentre directement en SC
+        
+        printf("Site %d : Je rentre en section critique", (*sommet).num);
+        calcul(7);
+        
+        printf("Pour sortir de la SC tapez 1 : ");
+        int fSC = 0;
+        scanf("%d", &fSC);
+        while (fSC != 1) {
+            int i = 0;
+            i++;
+        }
+        
+        printf("Site %d : J'ai terminé ma Section Critique\n", (*sommet).num);
+        
+        finSC(sommet, s);
+        
         return 1;
         
     } else { //Envoie la demande à son père
@@ -57,20 +75,6 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
 
         printf("Site %d : Demande de connexion à mon père reussie, je suis connecté au site %s:%d \n", (*sommet).num, inet_ntoa(addrPere.sin_addr), ntohs(addrPere.sin_port));
         
-        
-        /*
-        //J'envoie la taille de l'instruction
-        int tailleInst = sizeof(msg); // TODO *msg ou juste msg ??
-        
-        ssize_t env = send(dSPere, &tailleInst,tailleInst,0);
-        if (env < 1) {
-            printf("Site %d : pb à l'envoi de la taille de l'instruction dans envoyerDemande\n", (*sommet).num);
-            close (dSPere);
-            exit (1);
-        }
-        
-        printf("Site %d : Taille du message transmise \n", (*sommet).num);
-         */
         
         char message[100];
         snprintf(message, 100, "%d:%s:%d:", msg->typeMessage, inet_ntoa(msg->demandeur.sin_addr), msg->demandeur.sin_port);

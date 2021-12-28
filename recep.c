@@ -15,7 +15,7 @@
 void * reception(void * params){ //Comportement lors de la réception du token par un site l'ayant demandé
                             //Créer une socket qui recevra le jeton
     
-    //Début mise de socket en pointeur, arrêter de faire ctrlZ ici
+    
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
     
     sockaddr_in addrExp;
@@ -154,6 +154,7 @@ void recepDemande(message* msg, sites *k, int socket){ //Comportement d'un site 
                 printf("Site %d : Il devient mon Next, mais je n'ai pas encore reçu le jeton\n", (*k).num);            }
         }
     }else{ //Si je ne suis pas la racine
+        printf("Site %d : Je n'ai pas le jeton\n", (*k).num);
         envoyerDemande(k, msg, socket);
         (*k).Pere.sin_addr.s_addr = (*msg).demandeur.sin_addr.s_addr;
         (*k).Pere.sin_port = (*msg).demandeur.sin_port;
