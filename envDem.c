@@ -18,17 +18,16 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
     
     printf("\n  FONCTION ENVOYER DEMANDE \n");
     
-    if (((*args->k).addr.sin_addr.s_addr == (*args->m).demandeur.sin_addr.s_addr) && ((*args->k).addr.sin_port == (*args->m).demandeur.sin_port)){ //Si je suis le demandeur 'initial'
-        printf("Site %d : Je suis dans la fonction envoyerDemande : je deviens demandeur\n", (*args->k).num);
-        (*args->k).est_demandeur = 1;
+    if ((args->k->addr.sin_addr.s_addr == args->m->demandeur.sin_addr.s_addr) && (args->k->addr.sin_port == args->m->demandeur.sin_port)){ //Si je suis le demandeur 'initial'
+        printf("Site %d : Je suis dans la fonction envoyerDemande : je deviens demandeur\n", args->k->num);
+        args->k->est_demandeur = 1;
     }
     
     //Si mon père est différent de null
     
-    if ((*args->k).Pere.sin_addr.s_addr != inet_addr("0.0.0.0")) {
+    if (args->k->Pere.sin_addr.s_addr != inet_addr("0.0.0.0")) {
         //Envoie la demande à son père
-        printf("Site %d : J'envoi la demande à mon père, le processus %s:%d\n", (*args->k).num, inet_ntoa((*args->k).Pere.sin_addr), ntohs((*args->k).Pere.sin_port));
-
+        printf("Site %d : J'envoi la demande à mon père, le processus %s:%d\n", args->k->num, inet_ntoa(args->k->Pere.sin_addr), ntohs(args->k->Pere.sin_port));
         
         /* TCP */
         
@@ -40,11 +39,11 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
             exit(1);
         }
         
-        printf("Site %d : création de la socket pour communiquer avec mon père ok \n", (*args->k).num);
+        printf("Site %d : création de la socket pour communiquer avec mon père ok \n", args->k->num);
         
         sockaddr_in addrPere;
-        addrPere.sin_addr = (*args->k).Pere.sin_addr;
-        addrPere.sin_port = (*args->k).Pere.sin_port;
+        addrPere.sin_addr = args->k->Pere.sin_addr;
+        addrPere.sin_port = args->k->Pere.sin_port;
         addrPere.sin_family = AF_INET;
         socklen_t lgAddrPere = sizeof(struct sockaddr_in);
 
@@ -54,26 +53,26 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         
         if (conn < 0){
             perror("pb au connect dans la fonction envoyerDemande ");
-            close((*args->socket));
+            close(args->socket);
             exit(1);
         }
 
-        printf("Site %d : Demande de connexion à mon père reussie, je suis connecté au site %s:%d \n", (*args->k).num, inet_ntoa(addrPere.sin_addr), ntohs(addrPere.sin_port));
+        printf("Site %d : Demande de connexion à mon père reussie, je suis connecté au site %s:%d \n", args->k->num, inet_ntoa(addrPere.sin_addr), ntohs(addrPere.sin_port));
         
         
         char message[100];
-        snprintf(message, 100, "%d:%s:%d:", (*args->m).typeMessage, inet_ntoa((*args->m).demandeur.sin_addr), (*args->m).demandeur.sin_port);
-        printf("Type du message que j'envoie : %d\n", (*args->m).typeMessage);
+        snprintf(message, 100, "%d:%s:%d:", args->m->typeMessage, inet_ntoa(args->m->demandeur.sin_addr), args->m->demandeur.sin_port);
+        printf("Type du message que j'envoie : %d\n", args->m->typeMessage);
         
         //Puis j'envoie l'instruction elle même
         ssize_t env = send(dSPere, &message, sizeof(struct message),0);
         if (env < 1) {
-            printf("Site %d : pb à l'envoi de la demande\n", (*args->k).num);
+            printf("Site %d : pb à l'envoi de la demande\n", args->k->num);
             close (dSPere);
             exit (1);
         }
         
-        printf("Site %d : Demande transmise à mon père \n", (*args->k).num);
+        printf("Site %d : Demande transmise à mon père \n", args->k->num);
         
         close(dSPere); //Pas sur
         
@@ -92,19 +91,19 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         FIN UDP */
 
             
-        if (((*args->k).addr.sin_addr.s_addr == (*args->m).demandeur.sin_addr.s_addr) && ((*args->k).addr.sin_port == (*args->m).demandeur.sin_port)){ //Si je suis le demandeur 'initial'
+        if ((args->k->addr.sin_addr.s_addr == args->m->demandeur.sin_addr.s_addr) && (args->k->addr.sin_port == args->m->demandeur.sin_port)){ //Si je suis le demandeur 'initial'
             // Je met mon père à null
-            printf("Site %d : Je met mon père à null car j'ai envoyé une demande donc je me concidère comme la racine\n", (*args->k).num);
-            (*args->k).Pere.sin_addr.s_addr = inet_addr("0.0.0.0");
-            (*args->k).Pere.sin_port = 0;
+            printf("Site %d : Je met mon père à null car j'ai envoyé une demande donc je me concidère comme la racine\n", args->k->num);
+            args->k->Pere.sin_addr.s_addr = inet_addr("0.0.0.0");
+            args->k->Pere.sin_port = 0;
             
             // J'attends d'avoir le jeton
-            printf("Site %d : J'attends d'avoir le jeton pour entrer en SC\n", (*args->k).num);
-            pthread_mutex_lock(&args->jeton);
-            pthread_cond_wait(&args->a_jeton, &args->jeton);
+            printf("Site %d : J'attends d'avoir le jeton pour entrer en SC\n", args->k->num);
+            pthread_mutex_lock(&args->lock);
+            pthread_cond_wait(&args->a_jeton, &args->lock);
             printf("\n ~~~~~ SECTION CRITIQUE ~~~~~\n");
             
-            printf("\nSite %d : J'ai le jeton donc je rentre en section critique\n", (*args->k).num);
+            printf("\nSite %d : J'ai le jeton donc je rentre en section critique\n", args->k->num);
             calcul(7);
             
             printf("Pour sortir de la SC tapez 1 : ");
@@ -115,9 +114,9 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
                 i++;
             }
             
-            printf("Site %d : J'ai terminé ma Section Critique\n", (*args->k).num);
+            printf("Site %d : J'ai terminé ma Section Critique\n", args->k->num);
             
-            finSC(args->k, (*args->socket));
+            finSC(args->k, args->socket);
             
             printf("\n ~~~~~ FIN SECTION CRITIQUE ~~~~~\n");
             
@@ -127,10 +126,10 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
                 
         }
         
-    } else if ((*args->k).Pere.sin_addr.s_addr == inet_addr("0.0.0.0") && (*args->k).jeton_present == 1) { //Si mon père est null
+    } else if (args->k->Pere.sin_addr.s_addr == inet_addr("0.0.0.0") && args->k->jeton_present == 1) { //Si mon père est null
+        printf("\nSite %d : J'ai déjà le jeton donc je rentre en section critique\n", args->k->num);
         printf("\n ~~~~~ SECTION CRITIQUE ~~~~~\n");
-        
-        printf("\nSite %d : J'ai déjà le jeton donc je rentre en section critique\n", (*args->k).num);
+       
         calcul(7);
         
         printf("Pour sortir de la SC tapez 1 : ");
@@ -141,9 +140,9 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
             i++;
         }
         
-        printf("Site %d : J'ai terminé ma Section Critique\n", (*args->k).num);
+        printf("Site %d : J'ai terminé ma Section Critique\n", args->k->num);
         
-        finSC(args->k, (*args->socket));
+        finSC(args->k, args->socket);
         
         printf("\n ~~~~~ FIN SECTION CRITIQUE ~~~~~\n");
         

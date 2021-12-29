@@ -15,6 +15,11 @@ struct sites {
 	int jeton_present, est_demandeur, estEn_SC, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
+struct message {
+    int typeMessage; // 0 si c'est une demande, 1 si c'est le jeton
+    sockaddr_in demandeur;
+};
+
 /*struct predicatRdv {
   pthread_mutex_t lock;
   pthread_cond_t have_jeton;
@@ -22,13 +27,13 @@ struct sites {
 
 // structure pour regrouper les paramètres d'un thread. 
 struct paramsFonctionThread {
-	sites *k;
-	int *socket;
+	int socket;
     message *m;
+    sites *k;
 	int boucleEcoute;
 	//struct predicatRdv * varPartagee;
     
-    pthread_mutex_t jeton;
+    pthread_mutex_t lock;
     pthread_cond_t a_jeton;
 };
 /*
@@ -39,10 +44,6 @@ struct paramsDemande {
     int socket;
 }
 */
-struct message {
-	int typeMessage; // 0 si c'est une demande, 1 si c'est le jeton
-	sockaddr_in demandeur;
-};
 
 void init(sites *sommet, int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
@@ -52,8 +53,8 @@ void envoyerToken(sites *k, message* msg, int socket); //Envoie du token au Next
 
 void finSC(sites* k, int socket); //Sorti de la SC
 
-void recepDemande(message* msg, sites *k, int socket);//Comportement d'un site lors de la réception d'une requête venant du site k
-
+void recepDemande(void * params);//Comportement d'un site lors de la réception d'une requête venant du site k
+//message* msg, sites *k, int socket
 void * reception(void* params); //Réception d'un message et choix entre token et demande
 
 //void recepToken(sites* k);//Comportement lors de la réception du token par un site l'ayant demandé

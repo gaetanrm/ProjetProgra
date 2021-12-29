@@ -49,8 +49,10 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         printf("\n SUITE FONCTION FINSC \n");
         
         printf("Site %d : J'ai mis mon next à null\n", (*k).num);
+    } else {
+        printf("Site %d : Je n'ai pas de Next donc je garde le jeton\n", (*k).num);
     }
-    printf("Je n'ai pas de Next donc je garde le jeton\n");
+    
 }
 
 int main(int argc, char *argv[]){
@@ -136,20 +138,21 @@ int main(int argc, char *argv[]){
 	struct paramsFonctionThread tabParams;
 
     tabParams.k = &sommet;
-    tabParams.socket = &dS;
+    tabParams.socket = dS;
     //tabParams.idThread = i;
     //tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
     
     //Pour la demande
     pthread_t threadDemande;
-    struct paramsFonctionThread tabDem;
+    //struct paramsFonctionThread tabDem;
     
-    tabDem.k = &sommet;
-    tabDem.socket = &dS;
+    //tabDem.k = &sommet;
+    //tabDem.socket = &dS;
     
     
-    pthread_mutex_init(&(tabParams.jeton), NULL);
+    
+    pthread_mutex_init(&(tabParams.lock), NULL);
     pthread_cond_init(&(tabParams.a_jeton), NULL);
     
     if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
@@ -165,6 +168,8 @@ int main(int argc, char *argv[]){
     message msg;
     msg.demandeur = sommet.addr;
     
+    tabParams.m = &msg;
+    
 
     char arretOuDem[] = "init";
     char a[10] = "arret";
@@ -173,7 +178,7 @@ int main(int argc, char *argv[]){
     
     do{ //Tant que je ne fais pas une demande d'arret
         printf("\n Si vous voulez faire une demande, rentrez 'demande', si vous voulez arrêter le site, rentrez 'arret' :\n");
-        scanf("%s", &arretOuDem);
+        scanf("%s", arretOuDem);
         
         if(strcmp(arretOuDem, a) == 0){ //Si on demande un arrêt
             ad = 0;
@@ -189,6 +194,7 @@ int main(int argc, char *argv[]){
         
         if (ad == 1){ // Si je fais une demande de SC
             msg.typeMessage = 0;
+            printf("Type du message que j'ai avant d'envoyer la demande : %d\n", tabParams.m->typeMessage);
             printf("\nSite %d : Je fais une demande de SC\n", sommet.num);
             if (pthread_create(&threadDemande, NULL, envoyerDemande, &tabParams) != 0){ //Pas sur si je dois le mettre la ou pas
                 perror("Erreur création thread");
@@ -208,7 +214,7 @@ int main(int argc, char *argv[]){
 	pthread_join(threadEcoute, NULL);
     
     
-    printf("Thread principal : fin du thread d'écoute\n");
+    printf("Thread principal : fin du thread de reception\n");
     
     close(dS);
 	pthread_exit(NULL);

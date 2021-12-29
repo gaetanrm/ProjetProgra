@@ -40,6 +40,7 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
 
     printf("Site %d : demande de connexion à mon Next reussie \n", (*k).num);
     
+    printf("Mon next est le site : %s:%d\n", inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
     /*
      
     //J'envoie la taille de l'instruction
@@ -67,7 +68,7 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
         exit (1);
     }
     
-    printf("Site %d : Jeton envoyé au processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+    printf("Site %d : Jeton envoyé au site %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
 
     /* FIN TCP */
     
