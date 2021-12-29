@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 
-int envoyerDemande(sites* sommet, message* msg, int socket);
+void * envoyerDemande(void * params);
+//sites* sommet, message* msg, int socket
 
 #endif /* envDem_h */

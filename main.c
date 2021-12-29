@@ -53,10 +53,6 @@ void finSC(sites* k, int socket){ //Sorti de la SC
     printf("Je n'ai pas de Next donc je garde le jeton\n");
 }
 
-/*void recepTocken(sites *k){
-	(*k).jeton_present = 1;
-}*/
-
 int main(int argc, char *argv[]){
     
     if (argc != 6){
@@ -120,8 +116,8 @@ int main(int argc, char *argv[]){
     //printf("\nSite %d: creation de la socket : ok\n", i);
     
     // Passer la socket en mode ecoute
-    int ecoute = listen(dS,10); //10 est le nb max de demande qui peuvent être mises en file d'attente
-    if (ecoute < 0){
+    int ect = listen(dS,10); //10 est le nb max de demande qui peuvent être mises en file d'attente
+    if (ect < 0){
         printf("Site %d : je suis sourd\n", i);
         close(dS);
         exit(1);
@@ -131,38 +127,42 @@ int main(int argc, char *argv[]){
     
      /* FIN TCP */
     
-
+    
+    
+    /* CREATION DES THREADS, MUTEX ET CONDITION */
+    
+    //Pour la reception
 	pthread_t threadEcoute;
-
 	struct paramsFonctionThread tabParams;
 
-	/*struct predicatRdv jeton;
-	pthread_mutex_init(&(jeton.lock), NULL);
-	pthread_cond_init(&(jeton.have_jeton), NULL);*/
-
-    /*
-    int tempsAlgo;
-    printf("\n Rentrez le nombre de demande que vous souhaitez pour ce site :\n");
-    scanf("%d", &tempsAlgo);
-    //calcul(3);
-    */
-    
-	tabParams.k = &sommet;
-	tabParams.socket = &dS;
-	tabParams.idThread = i;
-	//tabParams.varPartagee = &jeton;
+    tabParams.k = &sommet;
+    tabParams.socket = &dS;
+    //tabParams.idThread = i;
+    //tabParams.varPartagee = &jeton;
     tabParams.boucleEcoute = 0;
     
+    //Pour la demande
+    pthread_t threadDemande;
+    struct paramsFonctionThread tabDem;
     
-	if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
-		perror("Erreur création thread");
-		exit(1);
-	}
+    tabDem.k = &sommet;
+    tabDem.socket = &dS;
+    
+    
+    pthread_mutex_init(&(tabParams.jeton), NULL);
+    pthread_cond_init(&(tabParams.a_jeton), NULL);
+    
+    if (pthread_create(&threadEcoute, NULL, reception, &tabParams) != 0){
+        perror("Erreur création thread");
+        exit(1);
+    }
 
-    //printf("Site %d : Création du thread pour la réception ok\n", sommet.num);
+    printf("Site %d : Création du thread pour la réception ok\n", sommet.num);
+	//Creer thread demande ici ?
+    
+    /* FIN CREATION THREADS */
 
     message msg;
-    //msg.typeMessage = 0; //Par défaut c'est une demande de SC
     msg.demandeur = sommet.addr;
     
 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
     char a[10] = "arret";
     char d[10] = "demande";
     int ad = 2; //Position neutre
-
+    
     do{ //Tant que je ne fais pas une demande d'arret
         printf("\n Si vous voulez faire une demande, rentrez 'demande', si vous voulez arrêter le site, rentrez 'arret' :\n");
         scanf("%s", &arretOuDem);
@@ -186,63 +186,30 @@ int main(int argc, char *argv[]){
         } else {
             printf("Vous n'avez demandé ni un arret, ni une demande de section critique\n");
         }
-            
+        
         if (ad == 1){ // Si je fais une demande de SC
-            //Si j'ai le jeton je rentre directement en SC
-            if(sommet.jeton_present == 1){
-                printf("Site %d : J'ai le jeton donc je rentre en section critique", sommet.num);
-                calcul(7);
-                
-                printf("Pour sortir de la SC tapez 1 : ");
-                int fSC = 0;
-                scanf("%d", &fSC);
-                int i = 0;
-                while (fSC != 1) {
-                    i++;
-                }
-                printf("Site %d : J'ai terminé ma Section Critique\n", sommet.num);
-                
-                finSC(&sommet, dS);
-                
-            } else { //Si je n'ai pas le jeton je fais une demande et je l'attends
-                msg.typeMessage = 0;
-                printf("\nSite %d : Je fais une demande de SC\n", sommet.num);
-                envoyerDemande(&sommet, &msg, dS);
-                while(sommet.jeton_present != 1){
-                    continue;
-                }
-                if (sommet.jeton_present == 1) {
-                    printf("Site %d : J'ai le jeton donc je rentre en section critique", sommet.num);
-                    calcul(7);
-                    
-                    printf("Site %d : Pour sortir de la SC tapez 1 : ", sommet.num);
-                    int fSC = 0;
-                    scanf("%d", &fSC);
-                    int i = 0;
-                    while (fSC != 1) {
-                        i++;
-                    }
-                    printf("Site %d : J'ai terminé ma Section Critique\n", sommet.num);
-                    
-                    finSC(&sommet, dS);
-                }
+            msg.typeMessage = 0;
+            printf("\nSite %d : Je fais une demande de SC\n", sommet.num);
+            if (pthread_create(&threadDemande, NULL, envoyerDemande, &tabParams) != 0){ //Pas sur si je dois le mettre la ou pas
+                perror("Erreur création thread");
+                exit(1);
             }
+            
+            printf("Site %d : Création du thread pour la demande ok\n", sommet.num);
+            pthread_join(threadDemande, NULL);
+            
         }
     } while(ad != 0);
 
  
     
-    /*
-    for (int i = 0; i < tempsAlgo; i++){
-        printf("Type du message : %d", msg.typeMessage);
-        envoyerDemande(&sommet, &msg, dS);
-    }
-    */
-
+    
+    //Attendre que les threads finissent
 	pthread_join(threadEcoute, NULL);
-
-	printf("Thread principal : fin du thread d'écoute\n");
-	//je termine proprement !
+    
+    
+    printf("Thread principal : fin du thread d'écoute\n");
+    
     close(dS);
 	pthread_exit(NULL);
 	

@@ -22,14 +22,23 @@ struct sites {
 
 // structure pour regrouper les paramètres d'un thread. 
 struct paramsFonctionThread {
-	int idThread;
 	sites *k;
 	int *socket;
+    message *m;
 	int boucleEcoute;
-	//int nbTours; //si chaque site ont le meme nb de demande mais pas super.
 	//struct predicatRdv * varPartagee;
+    
+    pthread_mutex_t jeton;
+    pthread_cond_t a_jeton;
 };
-
+/*
+struct paramsDemande {
+    int idThread;
+    sites *k;
+    message *m;
+    int socket;
+}
+*/
 struct message {
 	int typeMessage; // 0 si c'est une demande, 1 si c'est le jeton
 	sockaddr_in demandeur;
@@ -37,7 +46,7 @@ struct message {
 
 void init(sites *sommet, int port, in_addr IP_Pere, int Port_p, int num, int rac);//Initialisation de tous les sites au démarrage de l'algo
 
-int envoyerDemande(sites *k, message* msg, int socket); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
+void * envoyerDemande(void * params); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
 void envoyerToken(sites *k, message* msg, int socket); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
 
