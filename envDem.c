@@ -23,7 +23,7 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         args->k->est_demandeur = 1;
     }
     
-    //Si mon père est différent de null
+    //Si mon père est différent de null <=> Si je ne suis pas la racine
     
     if (args->k->Pere.sin_addr.s_addr != inet_addr("0.0.0.0")) {
         //Envoie la demande à son père
@@ -147,7 +147,7 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         printf("\n ~~~~~ FIN SECTION CRITIQUE ~~~~~\n");
         
     }
-        pthread_exit(NULL);
+        //pthread_exit(NULL);
         
 }
         

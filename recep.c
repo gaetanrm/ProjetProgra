@@ -93,11 +93,11 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         //pthread_cond_wait(&args->a_jeton, &args->jeton);
         if(msgRecu.typeMessage == 1){ //Si je reçois un jeton
             pthread_mutex_lock(&args->lock);
-            printf("Je vérouilles le mutex");
+            printf("Je vérouilles le mutex dans recep\n");
             printf("Site %d : Jeton reçu du processus %s:%d\n", args->k->num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             args->k->jeton_present = 1;
             pthread_cond_signal(&args->a_jeton);
-            printf("Je libères le mutex");
+            printf("Je libères le mutex dans recep\n");
             pthread_mutex_unlock(&args->lock);
         }
         else if(msgRecu.typeMessage == 0) { //Si je reçois une demande de SC
@@ -143,29 +143,30 @@ void recepDemande(void * params){ //Comportement d'un site lors de la réception
     args->m = msg;
     args->socket = &sock;*/
     printf("\n  FONCTION RECEP DEMANDE \n");
-    if (args->k->Pere.sin_addr.s_addr == inet_addr("0.0.0.0")){ //Si je suis la racine
+    if (args->k->Pere.sin_addr.s_addr == inet_addr("0.0.0.0")){ //Si je suis la racine <=> Je suis le seul site qui a pour père lui même
+        printf("Site %d : Le site demandeur initial devient mon Next\n", args->k->num);
         args->k->Next.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
         args->k->Next.sin_port = args->m->demandeur.sin_port;
-        printf("Site %d : Le site demandeur initial est le site : %s:%d\n", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
-        if (args->k->est_demandeur == 1){//Si je suis tjr en SC
-            printf("\n Site %d : J'ai recu une demande et je suis la racine mais je suis en SC, donc il devient mon Next\n", args->k->num);
-            args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
-            args->k->Pere.sin_port = args->m->demandeur.sin_port;
-        }else{ //Si je ne suis pas en SC
-            if (args->k->jeton_present == 1){ //Si j'ai le jeton je lui envoi
+        //printf("Site %d : Le site demandeur initial est le site : %s:%d\n", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
+        if (args->k->jeton_present == 1){ //Si j'ai le jeton
+            if(args->k->est_demandeur == 0){ //Si je ne suis pas en SC
                 args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
                 args->k->Pere.sin_port = args->m->demandeur.sin_port;
                 args->m->typeMessage = 1;
                 args->m->demandeur = args->k->addr;
                 printf("Site %d : J'ai le jeton donc je l'envoie à mon Next, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
                 envoyerToken(args->k, args->m, args->socket);
-                
-            }else{ //Si j'ai pas le jeton
+            } else if(args->k->est_demandeur == 1){ //Si je suis tjr en SC
+                printf("\n Site %d : J'ai recu une demande et je suis la racine mais je suis en SC, donc il devient mon Next\n", args->k->num);
+                args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
+                args->k->Pere.sin_port = args->m->demandeur.sin_port;
+            }
+        } else { //Si j'ai pas le jeton
                 printf("Site %d : Il devient mon Next, mais je n'ai pas encore reçu le jeton\n", args->k->num);            }
-        }
-    }else{ //Si je ne suis pas la racine
-        printf("Site %d : Je n'ai pas le jeton\n", args->k->num);
+    } else { //Si je ne suis pas la racine
+        printf("Site %d : Je n'ai pas le jeton donc j'envoie la demande à mon père, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->addr.sin_addr), ntohs(args->k->addr.sin_port));
         envoyerDemande(args);
+        printf("Site %d : Mon père devient le site %s:%d", args->k.num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
         args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
         args->k->Pere.sin_port = args->m->demandeur.sin_port;
     }

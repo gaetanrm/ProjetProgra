@@ -14,8 +14,8 @@
 #include "envJeton.h"
 #include "recep.h"
 
-// TODO Pouvoir choisir le nombre de sommets qu'on veut qu'il y ai dans notre arbre et ça ouvre autant de terminal que de sommets
-// TODO Le rendre tolérant aux pannes
+// TODO Quand on marque pas demande il faut pas que ça demande une SC
+
 
 in_addr** connaitreIP() {
     char s[256];
@@ -174,25 +174,19 @@ int main(int argc, char *argv[]){
     char arretOuDem[] = "init";
     char a[10] = "arret";
     char d[10] = "demande";
-    int ad = 2; //Position neutre
+    //int ad = 2; //Position neutre
     
     do{ //Tant que je ne fais pas une demande d'arret
         printf("\n Si vous voulez faire une demande, rentrez 'demande', si vous voulez arrêter le site, rentrez 'arret' :\n");
         scanf("%s", arretOuDem);
         
         if(strcmp(arretOuDem, a) == 0){ //Si on demande un arrêt
-            ad = 0;
+            //ad = 0;
             printf("Vous avez demandé un arret\n");
             break;
 
         } else if (strcmp(arretOuDem, d) == 0) { //Si on fait une demande
-            ad = 1;
-
-        } else {
-            printf("Vous n'avez demandé ni un arret, ni une demande de section critique\n");
-        }
-        
-        if (ad == 1){ // Si je fais une demande de SC
+            //ad = 1;
             msg.typeMessage = 0;
             printf("Type du message que j'ai avant d'envoyer la demande : %d\n", tabParams.m->typeMessage);
             printf("\nSite %d : Je fais une demande de SC\n", sommet.num);
@@ -203,9 +197,12 @@ int main(int argc, char *argv[]){
             
             printf("Site %d : Création du thread pour la demande ok\n", sommet.num);
             pthread_join(threadDemande, NULL);
-            
+
+        } else {
+            printf("Vous n'avez demandé ni un arret, ni une demande de section critique\n");
         }
-    } while(ad != 0);
+        
+    } while(strcmp(arretOuDem, a) != 0);
 
  
     
