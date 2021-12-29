@@ -23,22 +23,22 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
 
     if ((*sommet).Pere.sin_addr.s_addr == inet_addr("0.0.0.0") && (*sommet).jeton_present == 1){ //Si je suis la racine et que j'ai le jeton
         //Je rentre directement en SC
-        
-        printf("Site %d : Je rentre en section critique", (*sommet).num);
+        /*
+        printf("Site %d : J'ai déjà le jeton donc je rentre en section critique", (*sommet).num);
         calcul(7);
         
         printf("Pour sortir de la SC tapez 1 : ");
         int fSC = 0;
         scanf("%d", &fSC);
+        int i = 0;
         while (fSC != 1) {
-            int i = 0;
             i++;
         }
         
         printf("Site %d : J'ai terminé ma Section Critique\n", (*sommet).num);
         
         finSC(sommet, s);
-        
+        */
         return 1;
         
     } else { //Envoie la demande à son père
@@ -78,6 +78,7 @@ int envoyerDemande(sites* sommet, message* msg, int s){     //Envoie d'une requ�
         
         char message[100];
         snprintf(message, 100, "%d:%s:%d:", msg->typeMessage, inet_ntoa(msg->demandeur.sin_addr), msg->demandeur.sin_port);
+        printf("Type du message que j'envoie : %d", msg->typeMessage);
         
         //Puis j'envoie l'instruction elle même
         ssize_t env = send(dSPere, &message, sizeof(struct message),0);

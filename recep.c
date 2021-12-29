@@ -25,7 +25,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
     //espace memoire pour recevoir le message
     char msg[100];
     
-    calcul(1);
+    //calcul(1);
     
     
     while (args->boucleEcoute == 0){
@@ -94,10 +94,12 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         if(msgRecu.typeMessage == 1){ //Si je reçois un jeton
             printf("Site %d : Jeton reçu du processus %s:%d\n", (*args->k).num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             (*args->k).jeton_present = 1;
-            printf("Site %d : Je rentre en section critique", (*args->k).num);
-            calcul(7);
-            
+            /*
+            printf("Site %d : Je rentre en section critique\n\n\n", (*args->k).num);
+            //calcul(7);
+            printf("Je suis bloqué ici c'est chelou\n");
             printf("Pour sortir de la SC tapez 1 : ");
+            printf("Je suis bloqué ici c'est chelou\n");
             int fSC = 0;
             scanf("%d", &fSC);
             while (fSC != 1) {
@@ -108,6 +110,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             printf("Site %d : J'ai terminé ma Section Critique\n", (*args->k).num);
             
             finSC(args->k, (*(*args).socket));
+             */
         }
         else if(msgRecu.typeMessage == 0) { //Si je reçois une demande de SC
             printf("Site %d : Demande de jeton reçue du processus %s:%d\n", (*args->k).num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
