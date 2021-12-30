@@ -30,6 +30,38 @@ in_addr** connaitreIP() {
     return NULL;
 }
 
+void etatSite(sites *s){
+    printf("\n ~~~~~ ETAT DU SITE ~~~~~ \n");
+    
+    printf("\nIP du sommet: %s\n", inet_ntoa((*s).addr.sin_addr));
+    printf("Port du sommet: %hu\n", ntohs((*s).addr.sin_port));
+    
+    printf("IP du Next: %s\n", inet_ntoa((*s).Next.sin_addr));
+    printf("Port du Next: %hu\n", ntohs((*s).Next.sin_port));
+    
+    printf("IP du père: %s\n", inet_ntoa((*s).Pere.sin_addr));
+    printf("Port du Pèret: %hu\n", ntohs((*s).Pere.sin_port));
+    
+    if((*s).est_demandeur == 1){ //Si je suis demandeur de SC
+        printf("Est demandeur ? : oui\n");
+    } else {
+        printf("Est demandeur ? : non\n");
+    }
+    
+    if((*s).estEn_SC == 1){ //Si je suis en SC
+        printf("Est en SC ? : oui\n");
+    } else {
+        printf("Est en SC ? : non\n");
+    }
+    
+    if((*s).jeton_present == 1){ //Si j'ai le jeton
+        printf("Jeton présent ? : oui\n");
+    } else {
+        printf("Jeton présent ? : non\n");
+    }
+    printf("\n ~~~~~~~~~~~~~~~~~~~~~~~~ \n");
+}
+
 
 
 void finSC(sites* k, int socket){ //Sorti de la SC
@@ -42,15 +74,20 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         msg.demandeur = (*k).addr;
         
         printf("Site %d : J'envoi le jeton à mon next, le processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+        printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", (*k).num);
         envoyerToken(k, &msg, socket);
         (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
         (*k).Next.sin_port = 0;
+        
+        etatSite(k);
         
         printf("\n SUITE FONCTION FINSC \n");
         
         printf("Site %d : J'ai mis mon next à null\n", (*k).num);
     } else {
         printf("Site %d : Je n'ai pas de Next donc je garde le jeton\n", (*k).num);
+        printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", (*k).num);
+        etatSite(k);
     }
     
 }

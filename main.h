@@ -63,6 +63,8 @@ in_addr** connaitreIP();
 
 void envoyer(message msg);
 
+void etatSite(sites *s);
+
 /*
 Structure de donnée choisi :
 	Une liste pour la liste d'attente

@@ -120,6 +120,8 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
             
             printf("\n ~~~~~ FIN SECTION CRITIQUE ~~~~~\n");
             
+            etatSite(args->k);
+            
             
                 
             //J'ai le jeton donc je rentre en SC
@@ -146,7 +148,9 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         
         printf("\n ~~~~~ FIN SECTION CRITIQUE ~~~~~\n");
         
+        etatSite(args->k);
     }
+    
         //pthread_exit(NULL);
         
 }
