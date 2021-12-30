@@ -39,13 +39,13 @@ void etatSite(sites *s){
     printf("IP du Next: %s\n", inet_ntoa((*s).Next.sin_addr));
     printf("Port du Next: %hu\n", ntohs((*s).Next.sin_port));
     
-    printf("IP du père: %s\n", inet_ntoa((*s).Pere.sin_addr));
-    printf("Port du Pèret: %hu\n", ntohs((*s).Pere.sin_port));
+    printf("IP du Père: %s\n", inet_ntoa((*s).Pere.sin_addr));
+    printf("Port du Père: %hu\n", ntohs((*s).Pere.sin_port));
     
     if((*s).est_demandeur == 1){ //Si je suis demandeur de SC
-        printf("Est demandeur ? : oui\n");
+        printf("\nEst demandeur ? : oui\n");
     } else {
-        printf("Est demandeur ? : non\n");
+        printf("\nEst demandeur ? : non\n");
     }
     
     if((*s).estEn_SC == 1){ //Si je suis en SC

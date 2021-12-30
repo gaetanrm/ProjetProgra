@@ -62,7 +62,6 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         
         char message[100];
         snprintf(message, 100, "%d:%s:%d:", args->m->typeMessage, inet_ntoa(args->m->demandeur.sin_addr), args->m->demandeur.sin_port);
-        printf("Type du message que j'envoie : %d\n", args->m->typeMessage);
         
         //Puis j'envoie l'instruction elle même
         ssize_t env = send(dSPere, &message, sizeof(struct message),0);
@@ -73,6 +72,8 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         }
         
         printf("Site %d : Demande transmise à mon père \n", args->k->num);
+        
+        etatSite(args->k);
         
         close(dSPere); //Pas sur
         
@@ -99,12 +100,16 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
             
             // J'attends d'avoir le jeton
             printf("Site %d : J'attends d'avoir le jeton pour entrer en SC\n", args->k->num);
+            etatSite(args->k);
             pthread_mutex_lock(&args->lock);
             pthread_cond_wait(&args->a_jeton, &args->lock);
+            printf("\nSite %d : J'ai le jeton donc je rentre en section critique\n", args->k->num);
+            
             printf("\n ~~~~~ SECTION CRITIQUE ~~~~~\n");
             
-            printf("\nSite %d : J'ai le jeton donc je rentre en section critique\n", args->k->num);
             calcul(7);
+            
+            etatSite(args->k);
             
             printf("Pour sortir de la SC tapez 1 : ");
             int fSC = 0;
@@ -134,7 +139,9 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
        
         calcul(7);
         
-        printf("Pour sortir de la SC tapez 1 : ");
+        etatSite(args->k);
+        
+        printf("Pour sortir de la SC tapez 1 : \n");
         int fSC = 0;
         scanf("%d", &fSC);
         int i = 0;
