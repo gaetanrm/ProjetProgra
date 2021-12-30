@@ -48,12 +48,6 @@ void etatSite(sites *s){
         printf("\nEst demandeur ? : non\n");
     }
     
-    if((*s).estEn_SC == 1){ //Si je suis en SC
-        printf("Est en SC ? : oui\n");
-    } else {
-        printf("Est en SC ? : non\n");
-    }
-    
     if((*s).jeton_present == 1){ //Si j'ai le jeton
         printf("Jeton présent ? : oui\n");
     } else {
@@ -178,9 +172,6 @@ int main(int argc, char *argv[]){
 
     tabParams.k = &sommet;
     tabParams.socket = dS;
-    //tabParams.idThread = i;
-    //tabParams.varPartagee = &jeton;
-    tabParams.boucleEcoute = 0;
     
     //Pour la demande
     pthread_t threadDemande;

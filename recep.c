@@ -28,7 +28,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
     //calcul(1);
     
     
-    while (args->boucleEcoute == 0){
+    while (1){
         
         printf("\n  FONCTION RECEPTION \n");
         

@@ -12,7 +12,7 @@ struct sites {
 	sockaddr_in addr;
 	sockaddr_in Next;
 	sockaddr_in Pere; //Site suivant dans la liste d'attente et site père du site
-	int jeton_present, est_demandeur, estEn_SC, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
+	int jeton_present, est_demandeur, num; //Booléen pour savoir si le token est présent, si le site est demandeur et si le site est en SC.
 };
 
 struct message {
@@ -29,10 +29,7 @@ struct message {
 struct paramsFonctionThread {
 	int socket;
     message *m;
-    sites *k;
-	int boucleEcoute;
-	//struct predicatRdv * varPartagee;
-    
+    sites *k;   
     pthread_mutex_t lock;
     pthread_cond_t a_jeton;
 };
