@@ -74,8 +74,11 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         msg.demandeur = (*k).addr;
         
         printf("Site %d : J'envoi le jeton à mon next, le processus %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
-        printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", (*k).num);
-        envoyerToken(k, &msg, socket);
+        struct paramsFonctionThread tabParams;
+        tabParams.k = k;
+        tabParams.socket = socket;
+        tabParams.m = &msg;
+        envoyerToken(&tabParams);
         (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
         (*k).Next.sin_port = 0;
         
@@ -86,7 +89,6 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         printf("Site %d : J'ai mis mon next à null\n", (*k).num);
     } else {
         printf("Site %d : Je n'ai pas de Next donc je garde le jeton\n", (*k).num);
-        printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", (*k).num);
         etatSite(k);
     }
     
@@ -225,6 +227,8 @@ int main(int argc, char *argv[]){
         } else if (strcmp(arretOuDem, d) == 0) { //Si on fait une demande
             //ad = 1;
             msg.typeMessage = 0;
+            msg.demandeur = sommet.addr;
+            tabParams.m = &msg;
             printf("Type du message que j'ai avant d'envoyer la demande : %d\n", tabParams.m->typeMessage);
             printf("\nSite %d : Je fais une demande de SC\n", sommet.num);
             if (pthread_create(&threadDemande, NULL, envoyerDemande, &tabParams) != 0){ //Pas sur si je dois le mettre la ou pas

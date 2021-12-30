@@ -158,7 +158,7 @@ void * envoyerDemande(void * params){     //Envoie d'une requête de permission 
         etatSite(args->k);
     }
     
-        //pthread_exit(NULL);
+    pthread_exit(NULL);
         
 }
         

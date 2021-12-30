@@ -10,8 +10,10 @@
 #include "main.h"
 #include "envJeton.h"
 
-void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(void * params){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
     //Gérer socket et envoi avec valeur de retour
+
+    struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
 
     printf("\n  FONCTION ENVOYER JETON \n");
     
@@ -26,7 +28,7 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     }
     
     //envoyer une demande de connexion au Next.
-    sockaddr_in addrNext = (*k).Next;
+    sockaddr_in addrNext = args->k->Next;
     socklen_t lgAddrNext = sizeof(sockaddr_in);
     
     int conn = addrNext.sin_addr.s_addr;
@@ -34,13 +36,13 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     
     if (conn < 0){
         perror ("pb au connect dans la fonction envoyerJeton ");
-        close(s);
+        close(args->socket);
         exit (1);
     }
 
-    printf("Site %d : demande de connexion à mon Next reussie \n", (*k).num);
+    printf("Site %d : demande de connexion à mon Next reussie \n", args->k->num);
     
-    printf("Mon next est le site : %s:%d\n", inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+    printf("Mon next est le site : %s:%d\n", inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
     /*
      
     //J'envoie la taille de l'instruction
@@ -58,17 +60,17 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
      */
     
     char msgJ[100];
-    snprintf(msgJ, 100, "%d:%s:%d:", msg->typeMessage, inet_ntoa(msg->demandeur.sin_addr), msg->demandeur.sin_port);
+    snprintf(msgJ, 100, "%d:%s:%d:", args->m->typeMessage, inet_ntoa(args->m->demandeur.sin_addr), args->m->demandeur.sin_port);
     
     //Puis j'envoie le jeton
     int env = send(dsNext, &msgJ, sizeof(msgJ),0);
     if (env < 1) {
-        printf("Site %d : pb à l'envoi de la demande\n", (*k).num);
+        printf("Site %d : pb à l'envoi de la demande\n", args->k->num);
         close (dsNext);
         exit (1);
     }
     
-    printf("Site %d : Jeton envoyé au site %s:%d\n", (*k).num, inet_ntoa((*k).Next.sin_addr), ntohs((*k).Next.sin_port));
+    printf("Site %d : Jeton envoyé au site %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
 
     /* FIN TCP */
     
@@ -87,9 +89,9 @@ void envoyerToken(sites *k, message* msg, int s){ //Envoie du token au Next une 
     
         
     //J'ai envoyé le jeton à mon Next donc je met mon Next à null
-    (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
-    (*k).Next.sin_port = 0;
+    args->k->Next.sin_addr.s_addr = inet_addr("0.0.0.0");
+    args->k->Next.sin_port = 0;
     
-    (*k).jeton_present = 0;
+    args->k->jeton_present = 0;
     close(dsNext);
 }

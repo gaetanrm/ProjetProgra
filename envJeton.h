@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-void envoyerToken(sites *k, message* msg, int socket);
+void envoyerToken(void * params);
 
 #endif /* envJeton_h */

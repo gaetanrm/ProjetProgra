@@ -49,7 +49,7 @@ void init(sites *sommet, int port, in_addr IP_Pere, int Port_p, int num, int rac
 
 void * envoyerDemande(void * params); //Envoie d'une requête de permission pour passer en SC ou passage direct en SC car déjà tête de la liste et pas de queue
 
-void envoyerToken(sites *k, message* msg, int socket); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
+void envoyerToken(void * params); //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
 
 void finSC(sites* k, int socket); //Sorti de la SC
 

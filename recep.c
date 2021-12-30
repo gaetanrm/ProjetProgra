@@ -67,10 +67,9 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         printf("Type du message : %d\n", msgRecu.typeMessage);
         ptr = strtok(NULL, ":");
         msgRecu.demandeur.sin_addr.s_addr = inet_addr(ptr);
-        printf("Demandeur : %s\n ", inet_ntoa(msgRecu.demandeur.sin_addr));
-        ptr =  strtok(NULL, ":");
+        printf("Demandeur : %s\n", inet_ntoa(msgRecu.demandeur.sin_addr));
+        ptr = strtok(NULL, ":");
         msgRecu.demandeur.sin_port = atoi(ptr);
-        
         printf("Port du demandeur : %d\n", ntohs(msgRecu.demandeur.sin_port));
         
         /* FIN TCP */
@@ -122,7 +121,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         }
         close(dsExp); //Pas sur
     }
-    printf("Je suis sorti du while de reception wtf");
+    printf("Je suis sorti du while de reception");
     //printf("Thread écoute terminé");
     pthread_exit(NULL);
 
@@ -155,13 +154,11 @@ void recepDemande(void * params){ //Comportement d'un site lors de la réception
                 args->k->Pere.sin_port = args->m->demandeur.sin_port;
                 args->m->typeMessage = 1;
                 args->m->demandeur = args->k->addr;
-                printf("Site %d : J'ai le jeton donc je l'envoie à mon Next, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
-                printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", args->k->num);
-                envoyerToken(args->k, args->m, args->socket);
+                printf("Site %d : J'ai le jeton donc je l'envoie à mon Next, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));                
+                envoyerToken(args);
                 etatSite(args->k);
             } else if(args->k->est_demandeur == 1){ //Si je suis tjr en SC
                 printf("\n Site %d : J'ai recu une demande et je suis la racine mais je suis en SC, donc il devient mon Next\n", args->k->num);
-                printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", args->k->num);
                 args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
                 args->k->Pere.sin_port = args->m->demandeur.sin_port;
                 etatSite(args->k);
@@ -170,13 +167,18 @@ void recepDemande(void * params){ //Comportement d'un site lors de la réception
             printf("Site %d : Il devient mon Next, mais je n'ai pas encore reçu le jeton donc j'attends\n", args->k->num);
             printf("Site %d : Mon père devient le site %s:%d", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
             args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
-            args->k->Pere.sin_port = args->m->demandeur.sin_port;
-            printf("Site %d : JE SUIS SENSE AVOIR L'ETAT DE MON SITE JUSTE APRES CA\n", args->k->num);
+            args->k->Pere.sin_port = args->m->demandeur.sin_port;          
             etatSite(args->k);
         }
     } else { //Si je ne suis pas la racine
         printf("Site %d : Je n'ai pas le jeton donc j'envoie la demande à mon père, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->addr.sin_addr), ntohs(args->k->addr.sin_port));
-        envoyerDemande(args);
+        pthread_t threadDemande;
+        if (pthread_create(&threadDemande, NULL, envoyerDemande, args) != 0){ //Pas sur si je dois le mettre la ou pas
+            perror("Erreur création thread");
+            exit(1);
+        }      
+        pthread_join(threadDemande, NULL);
+        //envoyerDemande(args);
         printf("Site %d : Mon père devient le site %s:%d", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
         args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
         args->k->Pere.sin_port = args->m->demandeur.sin_port;
