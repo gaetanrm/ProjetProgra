@@ -11,9 +11,9 @@
 #include "recep.h"
 #include "calcul.h"
 
-//Fonction qu'on va appeler dans le thread qui sera en attente
-void * reception(void * params){ //Comportement lors de la réception du token par un site l'ayant demandé
-                            //Créer une socket qui recevra le jeton
+/* Fonction qu'on va appeler dans le thread qui sera en attente*/
+
+void * reception(void * params){
     
     
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
@@ -25,14 +25,12 @@ void * reception(void * params){ //Comportement lors de la réception du token p
     //espace memoire pour recevoir le message
     char msg[100];
     
-    //calcul(1);
-    
     
     while (1){
         
         printf("\n  FONCTION RECEPTION \n");
         
-        printf("\nSite %d : j'attends de recevoir un message\n", args->k->num);
+        printf("\nSite %d : J'attends de recevoir un message\n", args->k->num);
         
         /* TCP */
         
@@ -47,7 +45,7 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit (1);
         }
     
-        printf("Site %d : le site est connecté \n", args->k->num);
+        printf("Site %d : Un site s'est connecté \n", args->k->num);
 
         // Je recois la demande
         int recevoirTCP = recv (dsExp, &msg, sizeof(msg), 0);
@@ -58,19 +56,16 @@ void * reception(void * params){ //Comportement lors de la réception du token p
             exit(1);
         }
 
-        printf("ICISite %d : J'ai bien reçu le message\n", args->k->num);
+        printf("Site %d : J'ai bien reçu un message\n", args->k->num);
         
         message msgRecu;
         
         char *ptr = strtok(msg, ":");
         msgRecu.typeMessage = atoi(ptr);
-        printf("Type du message : %d\n", msgRecu.typeMessage);
         ptr = strtok(NULL, ":");
         msgRecu.demandeur.sin_addr.s_addr = inet_addr(ptr);
-        printf("Demandeur : %s\n", inet_ntoa(msgRecu.demandeur.sin_addr));
         ptr = strtok(NULL, ":");
         msgRecu.demandeur.sin_port = atoi(ptr);
-        printf("Port du demandeur : %d\n", ntohs(msgRecu.demandeur.sin_port));
         
         /* FIN TCP */
 
@@ -89,76 +84,64 @@ void * reception(void * params){ //Comportement lors de la réception du token p
         FIN UDP */
         
         
-        //pthread_cond_wait(&args->a_jeton, &args->jeton);
         if(msgRecu.typeMessage == 1){ //Si je reçois un jeton
+            printf("\nSite %d : J'ai reçu un jeton du processus %s:%d\n", args->k->num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             pthread_mutex_lock(&args->lock);
-            printf("Je vérouilles le mutex dans recep\n");
-            printf("Site %d : Jeton reçu du processus %s:%d\n", args->k->num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             args->k->jeton_present = 1;
             pthread_cond_signal(&args->a_jeton);
-            printf("Je libères le mutex dans recep\n");
             pthread_mutex_unlock(&args->lock);
         }
         else if(msgRecu.typeMessage == 0) { //Si je reçois une demande de SC
-            printf("Site %d : Demande de jeton reçue du processus %s:%d\n", args->k->num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
+            printf("\nSite %d : Demande de jeton reçu du site %s:%d\n", args->k->num, inet_ntoa(msgRecu.demandeur.sin_addr), ntohs(msgRecu.demandeur.sin_port));
             calcul(2);
             args->m->typeMessage = msgRecu.typeMessage;
             args->m->demandeur.sin_addr = msgRecu.demandeur.sin_addr;
             args->m->demandeur.sin_port = msgRecu.demandeur.sin_port;
             char message[100];
             snprintf(message, 100, "%d:%s:%d:", msgRecu.typeMessage, inet_ntoa(msgRecu.demandeur.sin_addr), msgRecu.demandeur.sin_port);
-            //printf("Type du message que j'envoie : %d\n", msgRecu.typeMessage);
-            //printf("IP du demandeur : %s \n", inet_ntoa(msgRecu.demandeur.sin_addr));
-            //printf("Port du demandeur : %d \n", ntohs(msgRecu.demandeur.sin_port));
 
             recepDemande(args);
         }
-        else{ //Si
-            printf("Site %d : Le message reçu n'est ni un jeton ni une demande", args->k->num);
+        else{ //Si il y a une erreur de frappe
+            printf("\nSite %d : Le message reçu n'est ni un jeton ni une demande\n", args->k->num);
             close((*args).socket);
             exit(1);
             etatSite(args->k);
         }
         close(dsExp); //Pas sur
     }
-    printf("Je suis sorti du while de reception");
-    //printf("Thread écoute terminé");
+    printf("Je suis sorti du while de reception\n");
+    
     pthread_exit(NULL);
 
 }
 
 
         
+/* Comportement d'un site lors de la réception d'une demande de SC venant du site k */
         
-        
-void recepDemande(void * params){ //Comportement d'un site lors de la réception d'une requête venant du site k
-                                    //message* msg, sites *site, int sock
-    printf("Je suis dans la fonction recepdemande\n");
+void recepDemande(void * params){
+
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
     
-    
-    
-    /*struct paramsFonctionThread * args = NULL;
-    args->k = site;
-    args->m = msg;
-    args->socket = &sock;*/
     printf("\n  FONCTION RECEP DEMANDE \n");
     if (args->k->Pere.sin_addr.s_addr == inet_addr("0.0.0.0")){ //Si je suis la racine <=> Je suis le seul site qui a pour père lui même
-        printf("Site %d : Le site demandeur initial devient mon Next et mon père\n", args->k->num);
+        printf("Site %d : Le site demandeur initial devient mon Next\n", args->k->num);
         args->k->Next.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
         args->k->Next.sin_port = args->m->demandeur.sin_port;
-        //printf("Site %d : Le site demandeur initial est le site : %s:%d\n", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
         if (args->k->jeton_present == 1){ //Si j'ai le jeton
             if(args->k->est_demandeur == 0){ //Si je ne suis pas en SC
+                printf("Site %d : Mon père devient le site %s:%d\n", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
                 args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
                 args->k->Pere.sin_port = args->m->demandeur.sin_port;
                 args->m->typeMessage = 1;
                 args->m->demandeur = args->k->addr;
-                printf("Site %d : J'ai le jeton donc je l'envoie à mon Next, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));                
+                printf("Site %d : J'ai le jeton donc je l'envoie à mon Next, le site : %s:%d\n", args->k->num, inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
                 envoyerToken(args);
                 etatSite(args->k);
             } else if(args->k->est_demandeur == 1){ //Si je suis tjr en SC
-                printf("\n Site %d : J'ai recu une demande et je suis la racine mais je suis en SC, donc il devient mon Next\n", args->k->num);
+                printf("Site %d : J'ai recu une demande et je suis la racine mais je suis en SC, donc il devient mon Next\n", args->k->num);
+                printf("Site %d : Mon père devient le site %s:%d", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
                 args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
                 args->k->Pere.sin_port = args->m->demandeur.sin_port;
                 etatSite(args->k);
@@ -179,7 +162,7 @@ void recepDemande(void * params){ //Comportement d'un site lors de la réception
         }      
         pthread_join(threadDemande, NULL);
         //envoyerDemande(args);
-        printf("Site %d : Mon père devient le site %s:%d", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
+        printf("Site %d : Mon père devient le site %s:%d\n", args->k->num, inet_ntoa(args->m->demandeur.sin_addr), ntohs(args->m->demandeur.sin_port));
         args->k->Pere.sin_addr.s_addr = args->m->demandeur.sin_addr.s_addr;
         args->k->Pere.sin_port = args->m->demandeur.sin_port;
         etatSite(args->k);

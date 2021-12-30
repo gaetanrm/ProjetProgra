@@ -14,22 +14,8 @@
 #include "envJeton.h"
 #include "recep.h"
 
-// TODO Quand on marque pas demande il faut pas que ça demande une SC
-
-
-in_addr** connaitreIP() {
-    char s[256];
-    struct hostent *host;
-    struct in_addr **adr;
-    if (!gethostname(s, 256)){
-        if ((host = gethostbyname(s)) != NULL) {
-            adr = (struct in_addr **)host->h_addr_list;
-            return adr;
-        }
-    }
-    return NULL;
-}
-
+/* Fonction d'affichage de l'état du site */
+    
 void etatSite(sites *s){
     printf("\n ~~~~~ ETAT DU SITE ~~~~~ \n");
     
@@ -56,7 +42,7 @@ void etatSite(sites *s){
     printf("\n ~~~~~~~~~~~~~~~~~~~~~~~~ \n");
 }
 
-
+/* Fonction pour finir la section crtique et envoyer le jeton au suivant */
 
 void finSC(sites* k, int socket){ //Sorti de la SC
     
@@ -73,15 +59,14 @@ void finSC(sites* k, int socket){ //Sorti de la SC
         tabParams.socket = socket;
         tabParams.m = &msg;
         envoyerToken(&tabParams);
+        
+        printf("Site %d : Je mets mon Next à null\n", (*k).num);
         (*k).Next.sin_addr.s_addr = inet_addr("0.0.0.0");
         (*k).Next.sin_port = 0;
         
         etatSite(k);
         
-        printf("\n SUITE FONCTION FINSC \n");
-        
-        printf("Site %d : J'ai mis mon next à null\n", (*k).num);
-    } else {
+    } else { //Si je n'ai pas de Next
         printf("Site %d : Je n'ai pas de Next donc je garde le jeton\n", (*k).num);
         etatSite(k);
     }
@@ -89,6 +74,7 @@ void finSC(sites* k, int socket){ //Sorti de la SC
 }
 
 int main(int argc, char *argv[]){
+    
     
     if (argc != 6){
         printf("utilisation : %s num_processus num_racine Port IP_Pere Port_Pere \n", argv[0]);
@@ -127,8 +113,7 @@ int main(int argc, char *argv[]){
         exit(1);
     }
     
-
-    //printf("Sommet %d: creation de la socket UDP : ok\n", i);
+     printf("Sommet %d: creation de la socket UDP : ok\n", i);
     
      FIN UDP */
     
@@ -175,11 +160,6 @@ int main(int argc, char *argv[]){
     
     //Pour la demande
     pthread_t threadDemande;
-    //struct paramsFonctionThread tabDem;
-    
-    //tabDem.k = &sommet;
-    //tabDem.socket = &dS;
-    
     
     
     pthread_mutex_init(&(tabParams.lock), NULL);
@@ -190,8 +170,8 @@ int main(int argc, char *argv[]){
         exit(1);
     }
 
-    printf("Site %d : Création du thread pour la réception ok\n", sommet.num);
-	//Creer thread demande ici ?
+    printf("\nSite %d : Création du thread pour la réception ok\n", sommet.num);
+	
     
     /* FIN CREATION THREADS */
 
@@ -211,12 +191,10 @@ int main(int argc, char *argv[]){
         scanf("%s", arretOuDem);
         
         if(strcmp(arretOuDem, a) == 0){ //Si on demande un arrêt
-            //ad = 0;
             printf("Vous avez demandé un arret\n");
             break;
 
         } else if (strcmp(arretOuDem, d) == 0) { //Si on fait une demande
-            //ad = 1;
             msg.typeMessage = 0;
             msg.demandeur = sommet.addr;
             tabParams.m = &msg;
@@ -231,13 +209,11 @@ int main(int argc, char *argv[]){
             pthread_join(threadDemande, NULL);
 
         } else {
-            printf("Vous n'avez demandé ni un arret, ni une demande de section critique\n");
+            printf("ATTENTION : Vous n'avez demandé ni un arret, ni une demande de section critique ~~\n");
         }
         
     } while(strcmp(arretOuDem, a) != 0);
 
- 
-    
     
     //Attendre que les threads finissent
 	pthread_join(threadEcoute, NULL);

@@ -9,9 +9,10 @@
 #include <string.h>
 #include "main.h"
 
-void init(sites *sommet, int port, in_addr IP_p, int Port_p, int n, int rac){ //Initialisation de tous les sites au démarrage de l'algo
-    //Chacun doit envoyer son num aux autres pour savoir qui est le 1, donc qui sera la racine au départ de l'algo même si il n'a pas fait de demande.
-    //C'est juste pour que l'algo puisse fonctionner ensuite car il a besoin d'une racine pour cela
+/* Initialisation de tous les sites au démarrage de l'algo */
+
+void init(sites *sommet, int port, in_addr IP_p, int Port_p, int n, int rac){
+    
     
     //sites sommet;
     (*sommet).num = n;
@@ -36,24 +37,22 @@ void init(sites *sommet, int port, in_addr IP_p, int Port_p, int n, int rac){ //
     //Pere
     (*sommet).Pere.sin_family = AF_INET;
     
-    if ((*sommet).num != rac) {
+    if ((*sommet).num != rac) { //Si je ne suis pas la racine
         (*sommet).Pere.sin_addr = IP_p;
-        printf("IP du père: %s\n", inet_ntoa((*sommet).Pere.sin_addr));
+        printf("IP du Père: %s\n", inet_ntoa((*sommet).Pere.sin_addr));
         (*sommet).Pere.sin_port = htons((short)Port_p);
-        printf("Port du Pèret: %hu\n", ntohs((*sommet).Pere.sin_port));
+        printf("Port du Père: %hu\n", ntohs((*sommet).Pere.sin_port));
         (*sommet).jeton_present = 0;
-    } else {
+    } else { // SI je suis la racine mon père est null
         (*sommet).Pere.sin_addr.s_addr = inet_addr("0.0.0.0"); //Valeur aléatoire, faudra s'en occuper plus tard
-        (*sommet).Pere.sin_port = 0; //Idem
+        (*sommet).Pere.sin_port = 0;
         printf("IP du père: %s\n", inet_ntoa((*sommet).Pere.sin_addr));
         printf("Port du Père: %hu\n", ntohs((*sommet).Pere.sin_port));
         (*sommet).jeton_present = 1;
     }
     
     (*sommet).est_demandeur = 0;
-    (*sommet).estEn_SC = 0;
     printf("\nEst demandeur ? : non\n");
-    printf("Est en SC ? : non\n");
     
     if((*sommet).num == rac){ //Si je suis la racine j'ai le jeton
         (*sommet).jeton_present = 1;
@@ -64,7 +63,5 @@ void init(sites *sommet, int port, in_addr IP_p, int Port_p, int n, int rac){ //
 
     
     printf("\n~~~~~ SITE %d INITIALISÉ ~~~~~\n", (*sommet).num);
-    //printf("\nIP : %s \nPort : %d \nIP du père : %s \nPort du père : %d \nIP du Next : %u \nPort du Next : %d \nJeton présent ? %d\n", inet_ntoa(sommet.addr.sin_addr), ntohs(sommet.addr.sin_port), inet_ntoa(sommet.Pere.sin_addr), ntohs(sommet.Pere.sin_port), sommet.Next.sin_addr.s_addr, sommet.Next.sin_port, sommet.jeton_present);
     
-    //return sommet;
 }

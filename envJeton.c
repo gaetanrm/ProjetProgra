@@ -10,12 +10,13 @@
 #include "main.h"
 #include "envJeton.h"
 
-void envoyerToken(void * params){ //Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC
-    //Gérer socket et envoi avec valeur de retour
+/* Envoie du token au Next une fois que j'ai fini ce que je voulais faire en SC */
+
+void envoyerToken(void * params){
 
     struct paramsFonctionThread * args = (struct paramsFonctionThread *) params;
 
-    printf("\n  FONCTION ENVOYER JETON \n");
+    printf("\n FONCTION ENVOYER JETON \n");
     
     
     /* TCP */
@@ -43,21 +44,7 @@ void envoyerToken(void * params){ //Envoie du token au Next une fois que j'ai fi
     printf("Site %d : demande de connexion à mon Next reussie \n", args->k->num);
     
     printf("Mon next est le site : %s:%d\n", inet_ntoa(args->k->Next.sin_addr), ntohs(args->k->Next.sin_port));
-    /*
-     
-    //J'envoie la taille de l'instruction
-    int tailleInst = sizeof(msg); // TODO *msg ou juste msg ??
     
-    ssize_t env = send(dsNext, &tailleInst,tailleInst,0);
-    if (env < 1) {
-        printf("Site %d : pb à l'envoi de la taille de l'instruction dans envoyerDemande\n", (*k).num);
-        close (dsNext);
-        exit (1);
-    }
-    
-    printf("Site %d : taille du message transmise \n", (*k).num);
-     
-     */
     
     char msgJ[100];
     snprintf(msgJ, 100, "%d:%s:%d:", args->m->typeMessage, inet_ntoa(args->m->demandeur.sin_addr), args->m->demandeur.sin_port);
@@ -94,4 +81,7 @@ void envoyerToken(void * params){ //Envoie du token au Next une fois que j'ai fi
     
     args->k->jeton_present = 0;
     close(dsNext);
+    
+    printf("\n FIN FONCTION ENVOYER JETON \n");
+
 }
